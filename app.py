@@ -10,4 +10,3 @@ app = Flask(__name__)
 def index():
     # Return the index page
     return render_template('index.html')
-

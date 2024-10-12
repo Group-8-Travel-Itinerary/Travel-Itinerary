@@ -6,7 +6,8 @@ import openai
 import yaml
 
 # load yml file to dictionary
-credentials = yaml.load(open('./credentials.yml'))
+with open('./credentials.yml', 'r') as file:
+    credentials = yaml.load(file, Loader=yaml.SafeLoader)
 
 # access values from dictionary for OpenAI API key
 

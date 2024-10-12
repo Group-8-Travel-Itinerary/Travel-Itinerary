@@ -37,7 +37,7 @@ def quiz():
         ]
 
         # Combine user answers into a single message or format as needed
-        formatted_answers = ', '.join(user_answers)
+        formatted_answers = ', '.join(filter(None, user_answers))
 
         # Inside the quiz() function after calling send_quiz_to_gpt
         gpt_response = send_quiz_to_gpt(formatted_answers)

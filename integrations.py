@@ -3,15 +3,16 @@
 import requests
 import json
 import openai
-import yaml
+import os
 
-# load yml file to dictionary
-with open('./credentials.yml', 'r') as file:
-    credentials = yaml.load(file, Loader=yaml.SafeLoader)
+#get key from enviroment variable, if new to this branch please add the key to your envoroment variables with that name OPENAI_API_KEY 
+#could not get this working if someone can figure out a way please do  
+#openai_api_key = os.getenv("OPENAI_API_KEY")
 
-# access values from dictionary for OpenAI API key
+#for now just paste in the key here when your testing 
+openai_api_key = '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'
 
-openai.api_key = credentials['database']['open_ai_api_key']
+
 
 # Function to get the data from the Google Places API
 def google_places():

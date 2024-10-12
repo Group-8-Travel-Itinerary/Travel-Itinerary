@@ -7,10 +7,13 @@ import requests
 from datetime import date, datetime
 from integrations import openai
 from integrations import send_quiz_to_gpt
+import os
 
 
 # Creates a Flask app
 app = Flask(__name__)
+
+
 
 # Route for the index page
 @app.route('/')
@@ -37,7 +40,7 @@ def quiz():
         ]
 
         # Combine user answers into a single message or format as needed
-        formatted_answers = ', '.join(filter(None, user_answers))
+        formatted_answers = ', '.join(user_answers)
 
         # Inside the quiz() function after calling send_quiz_to_gpt
         gpt_response = send_quiz_to_gpt(formatted_answers)

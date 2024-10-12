@@ -3,13 +3,20 @@
 import requests
 import json
 import openai
+import yaml
+
+# load yml file to dictionary
+credentials = yaml.load(open('./credentials.yml'))
+
+# access values from dictionary for OpenAI API key
+
+openai.api_key = credentials['database']['open_ai_api_key']
 
 # Function to get the data from the Google Places API
 def google_places():
     return "WIP"
 
-# OpenAI API key
-openai.api_key = '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'
+
 
 # Function for sending quiz answers to GPT API
 def send_quiz_to_gpt(message):

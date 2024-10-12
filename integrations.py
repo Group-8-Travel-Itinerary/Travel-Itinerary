@@ -9,7 +9,7 @@ def google_places():
     return "WIP"
 
 # OpenAI API key
-openai.api_key = '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'
+openai.api_key = ''
 
 # Function for sending quiz answers to GPT API
 def send_quiz_to_gpt(message):

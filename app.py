@@ -7,13 +7,10 @@ import requests
 from datetime import date, datetime
 from integrations import openai
 from integrations import send_quiz_to_gpt
-import os
 
 
 # Creates a Flask app
 app = Flask(__name__)
-
-
 
 # Route for the index page
 @app.route('/')

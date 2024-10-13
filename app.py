@@ -1,11 +1,7 @@
 # Description: This file contains the code for the Flask app that will be used to run the web application.
 # Imports the necessary modules and libraries
-from flask import Flask, render_template, request, url_for, flash, redirect, session
-import json
-from bs4 import BeautifulSoup
-import requests
-from datetime import date, datetime
-from integrations import openai, send_quiz_to_gpt, pexels_images
+from flask import Flask, render_template, request, url_for, flash, redirect
+from integrations import send_quiz_to_gpt, pexels_images
 
 
 # Creates a Flask app

@@ -3,6 +3,11 @@
 import requests
 import json
 import openai
+import yaml
+
+# Load the API keys from the config file
+credentials = yaml.load(open('config.yaml'), Loader=yaml.FullLoader)
+pexels_api_key = credentials['pexels']['api_key']
 
 # Function to get the data from the Google Places API
 def google_places():
@@ -79,3 +84,27 @@ def flights():
 # Function to get the weather data from an API
 def weather():
     return "WIP"
+
+def pexels_images(query, per_page=10):
+    # Function to get images from Pexels API
+    url = "https://api.pexels.com/v1/search"
+    headers = {
+        "Authorization": pexels_api_key
+    }
+    params = {
+        "query": query,
+        "per_page": per_page
+    }
+        
+    response = requests.get(url, headers=headers, params=params)
+        
+    if response.status_code != 200:
+        error_content = response.text
+        return {"error": f"Error: {response.status_code}", "message": error_content}
+    else:
+        response_data = response.json()
+        photos = response_data.get("photos", [])
+        image_urls = [photo["src"]["original"] for photo in photos]
+        return image_urls
+    
+print(pexels_images("iceland"))

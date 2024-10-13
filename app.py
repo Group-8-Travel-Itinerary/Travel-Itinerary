@@ -5,8 +5,7 @@ import json
 from bs4 import BeautifulSoup
 import requests
 from datetime import date, datetime
-from integrations import openai
-from integrations import send_quiz_to_gpt
+from integrations import openai, send_quiz_to_gpt, pexels_images
 
 
 # Creates a Flask app
@@ -54,3 +53,11 @@ def quiz():
         return render_template('quiz_response.html', summary=summary, destinations=destinations)
 
     return render_template('quiz.html')  # Render the quiz form on GET request
+
+@app.route('/pexels_test')
+def pexels_test():
+    # Call the Pexels API function to get images
+    images = pexels_images('amsterdam in winter')
+
+    # Render the images on a new template
+    return render_template('pexels_test.html', images=images)

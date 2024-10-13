@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Results</title>
+</head>
+<body>
+    <h1>Your Travel Personality Summary</h1>
+    <p>{{ summary }}</p> <!-- Display the user's travel personality summary -->
+
+    <h2>Recommended Destinations</h2>
+    {% if destinations %}
+        <ul>
+            {% for destination in destinations %}
+                <li>
+                    <h3>{{ destination.name }}</h3>
+                    <h4>Activities:</h4>
+                    <ul>
+                        {% for activity in destination.activities %}
+                            <li>{{ activity }}</li>
+                        {% endfor %}
+                    </ul>
+                    <h4>Accommodation Options:</h4>
+                    <ul>
+                        {% for place in destination.accommodation %}
+                            <li>{{ place }}</li>
+                        {% endfor %}
+                    </ul>
+                    <h4>Travel Tips:</h4>
+                    <ul>
+                        {% for tip in destination.travelTips %}
+                            <li>{{ tip }}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No destinations found.</p>
+    {% endif %}
+    
+    <a href="{{ url_for('index') }}">Go back to home</a> <!-- Link back to the index page -->
+</body>
+</html>

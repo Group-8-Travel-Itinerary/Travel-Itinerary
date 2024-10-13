@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Quiz</title>
+</head>
+<body>
+    <h1>Travel Personality Quiz</h1>
+    <form method="POST" action="{{ url_for('quiz') }}">
+        <h2>1. What excites you the most about traveling?</h2>
+        <input type="radio" id="question1a" name="answer1" value="A">
+        <label for="question1a">A. Immersing in new cultures and history.</label><br>
+        <input type="radio" id="question1b" name="answer1" value="B">
+        <label for="question1b">B. Seeking adventure and adrenaline-pumping activities.</label><br>
+        <input type="radio" id="question1c" name="answer1" value="C">
+        <label for="question1c">C. Relaxing on a beach with a good book.</label><br>
+        <input type="radio" id="question1d" name="answer1" value="D">
+        <label for="question1d">D. Exploring nature and beautiful landscapes.</label><br>
+        <input type="radio" id="question1e" name="answer1" value="E">
+        <label for="question1e">E. Experiencing bustling cities and vibrant nightlife.</label><br>
+
+        <h2>2. What’s your ideal accommodation type?</h2>
+        <input type="radio" id="question2a" name="answer2" value="A">
+        <label for="question2a">A. A cozy boutique hotel in the heart of the city.</label><br>
+        <input type="radio" id="question2b" name="answer2" value="B">
+        <label for="question2b">B. A rustic cabin or a tent in the wilderness.</label><br>
+        <input type="radio" id="question2c" name="answer2" value="C">
+        <label for="question2c">C. A luxury resort with all-inclusive services.</label><br>
+        <input type="radio" id="question2d" name="answer2" value="D">
+        <label for="question2d">D. A budget-friendly hostel or guesthouse.</label><br>
+        <input type="radio" id="question2e" name="answer2" value="E">
+        <label for="question2e">E. Staying with locals for an authentic experience (e.g., homestays or Airbnbs).</label><br>
+
+        <h2>3. Which of these activities would you prefer on your trip?</h2>
+        <input type="radio" id="question3a" name="answer3" value="A">
+        <label for="question3a">A. Hiking, kayaking, or mountain climbing.</label><br>
+        <input type="radio" id="question3b" name="answer3" value="B">
+        <label for="question3b">B. Visiting museums, art galleries, and historical sites.</label><br>
+        <input type="radio" id="question3c" name="answer3" value="C">
+        <label for="question3c">C. Trying local foods and attending food markets.</label><br>
+        <input type="radio" id="question3d" name="answer3" value="D">
+        <label for="question3d">D. Relaxing at a spa or lounging on the beach.</label><br>
+        <input type="radio" id="question3e" name="answer3" value="E">
+        <label for="question3e">E. Exploring local nightlife or shopping in trendy areas.</label><br>
+
+        <h2>4. How important are physical activities during your travels?</h2>
+        <input type="radio" id="question4a" name="answer4" value="A">
+        <label for="question4a">A. I need a lot of outdoor activities to stay active.</label><br>
+        <input type="radio" id="question4b" name="answer4" value="B">
+        <label for="question4b">B. I prefer a mix of light activities and sightseeing.</label><br>
+        <input type="radio" id="question4c" name="answer4" value="C">
+        <label for="question4c">C. Physical activity isn’t a priority; I’d rather explore at a slow pace.</label><br>
+
+        <h2>5. Who do you typically travel with?</h2>
+        <input type="radio" id="question5a" name="answer5" value="A">
+        <label for="question5a">A. I prefer traveling solo.</label><br>
+        <input type="radio" id="question5b" name="answer5" value="B">
+        <label for="question5b">B. With a group of friends.</label><br>
+        <input type="radio" id="question5c" name="answer5" value="C">
+        <label for="question5c">C. My family, including kids.</label><br>
+        <input type="radio" id="question5d" name="answer5" value="D">
+        <label for="question5d">D. My partner or significant other.</label><br>
+        <input type="radio" id="question5e" name="answer5" value="E">
+        <label for="question5e">E. I love meeting new people during group tours.</label><br>
+
+        <h2>6. Do you prefer traveling in a quiet, less crowded environment, or do you enjoy busy, lively destinations?</h2>
+        <input type="radio" id="question6a" name="answer6" value="A">
+        <label for="question6a">A. I love exploring popular tourist hotspots.</label><br>
+        <input type="radio" id="question6b" name="answer6" value="B">
+        <label for="question6b">B. I prefer quieter, off-the-beaten-path destinations.</label><br>
+        <input type="radio" id="question6c" name="answer6" value="C">
+        <label for="question6c">C. I enjoy a good balance of both.</label><br>
+
+        <h2>7. How much time do you typically have for a vacation?</h2>
+        <input type="radio" id="question7a" name="answer7" value="A">
+        <label for="question7a">A. Just a weekend or a short getaway (2-4 days).</label><br>
+        <input type="radio" id="question7b" name="answer7" value="B">
+        <label for="question7b">B. About a week.</label><br>
+        <input type="radio" id="question7c" name="answer7" value="C">
+        <label for="question7c">C. Two weeks or more.</label><br>
+        <input type="radio" id="question7d" name="answer7" value="D">
+        <label for="question7d">D. As long as I can get—I’m flexible.</label><br>
+
+        <h2>8. What’s your typical travel budget?</h2>
+        <input type="radio" id="question8a" name="answer8" value="A">
+        <label for="question8a">A. I’m on a tight budget—looking for affordable options.</label><br>
+        <input type="radio" id="question8b" name="answer8" value="B">
+        <label for="question8b">B. I’m willing to spend a bit more for a great experience.</label><br>
+        <input type="radio" id="question8c" name="answer8" value="C">
+        <label for="question8c">C. I have no set budget—I want luxury and convenience.</label><br>
+
+        <h2>9. What type of climate do you prefer for your trips?</h2>
+        <input type="radio" id="question9a" name="answer9" value="A">
+        <label for="question9a">A. Warm and sunny—perfect for beaches.</label><br>
+        <input type="radio" id="question9b" name="answer9" value="B">
+        <label for="question9b">B. Cool and crisp—ideal for nature hikes and exploring cities.</label><br>
+        <input type="radio" id="question9c" name="answer9" value="C">
+        <label for="question9c">C. Cold and snowy—I love winter activities.</label><br>
+        <input type="radio" id="question9d" name="answer9" value="D">
+        <label for="question9d">D. I’m flexible and enjoy all kinds of climates.</label><br>
+
+        <h2>10. Which kind of scenery do you find most appealing?</h2>
+        <input type="radio" id="question10a" name="answer10" value="A">
+        <label for="question10a">A. Pristine beaches and clear oceans.</label><br>
+        <input type="radio" id="question10b" name="answer10" value="B">
+        <label for="question10b">B. Mountains and forests with fresh air.</label><br>
+        <input type="radio" id="question10c" name="answer10" value="C">
+        <label for="question10c">C. A mix of modern skyscrapers and cultural landmarks.</label><br>
+        <input type="radio" id="question10d" name="answer10" value="D">
+        <label for="question10d">D. Historic villages, ancient ruins, and quaint towns.</label><br>
+
+        <br>
+        <input type="submit" value="Submit">
+    </form>
+
+   
+</body>
+</html>

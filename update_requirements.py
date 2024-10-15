@@ -8,8 +8,8 @@ def update_requirements():
         # Get the current working directory
         cwd = os.getcwd()
 
-        # Check if pipreqs is installed
-        subprocess.run([sys.executable, "-m", "pip", "install", "--user", "pipreqs"], check=True)
+        # Check if pipreqs is installed; if not, install it without --user
+        subprocess.run([sys.executable, "-m", "pip", "install", "pipreqs"], check=True)
 
         # Construct the pipreqs command
         pipreqs_command = [

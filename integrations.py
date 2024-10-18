@@ -77,13 +77,50 @@ def load_gpt_instructions(file_path):
  with open(file_path, 'r') as file:
     return file.read()
 
+# Flight API key
+flight_api_key = '4fd54c41dd6fc731d431e14ee573e56d'
+
 # Function to get data from a flights API to give an idea of the prices
 def flights():
-    return "WIP"
+    # Flight API URL
+    url = "https://api.aviationstack.com"
+
+    response = requests.get(url)
+    if response.status_code != 200:
+        error_content = response.text
+        return {"error": f"Error: {response.status_code}", "message": error_content}
+    else:
+        response_data = response.json()
+        return response_data
+
+# Weather API key
+weather_api_key = '5f27832dfc3b15ad2b12926ec704e8d7'
 
 # Function to get the weather data from an API
 def weather():
-    return "WIP"
+    # Geolocation Api to get Latitude and Longitude of the city
+    geo_url = "http://api.openweathermap.org/geo/1.0/direct?q=" & city & "&appid=" & weather_api_key
+
+    response = requests.get(geo_url)
+    if response.status_code != 200:
+        error_content = response.text
+        return {"error": f"Error: {response.status_code}", "message": error_content}
+    else:
+        response_data = response.json()
+        lat = response_data[0]["lat"]
+        lon = response_data[0]["lon"]
+
+        #Once we have the latitude and longitude, we can use the One Call API to get the weather data
+        weather_url = f"http://api.openweathermap.org/data/2.5/onecall?lat={lat}&lon={lon}&exclude=minutely&appid={weather_api_key}"
+        response = requests.get(weather_url)
+
+        if response.status_code != 200:
+            error_content = response.text
+            return {"error": f"Error: {response.status_code}", "message": error_content}
+        
+        else:
+            response_data = response.json()
+            return response_data
 
 def pexels_images(query, per_page=10):
     # Function to get images from Pexels API

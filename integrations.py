@@ -99,16 +99,18 @@ weather_api_key = '5f27832dfc3b15ad2b12926ec704e8d7'
 # Function to get the weather data from an API
 def weather():
     # Geolocation Api to get Latitude and Longitude of the city
-    geo_url = "http://api.openweathermap.org/geo/1.0/direct?q=" & city & "&appid=" & weather_api_key
 
-    response = requests.get(geo_url)
-    if response.status_code != 200:
-        error_content = response.text
-        return {"error": f"Error: {response.status_code}", "message": error_content}
-    else:
-        response_data = response.json()
-        lat = response_data[0]["lat"]
-        lon = response_data[0]["lon"]
+    for i in range(3):
+        geo_url = "http://api.openweathermap.org/geo/1.0/direct?q=" & city(i) & "&appid=" & weather_api_key
+
+        response = requests.get(geo_url)
+        if response.status_code != 200:
+            error_content = response.text
+            return {"error": f"Error: {response.status_code}", "message": error_content}
+        else:
+            response_data = response.json()
+            lat = response_data[0]["lat"]
+            lon = response_data[0]["lon"]
 
         #Once we have the latitude and longitude, we can use the One Call API to get the weather data
         weather_url = f"http://api.openweathermap.org/data/2.5/onecall?lat={lat}&lon={lon}&exclude=minutely&appid={weather_api_key}"

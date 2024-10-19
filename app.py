@@ -57,3 +57,6 @@ def pexels_test():
 
     # Render the images on a new template
     return render_template('pexels_test.html', images=images)
+
+if __name__ == '__main__':
+    app.run(debug=True)

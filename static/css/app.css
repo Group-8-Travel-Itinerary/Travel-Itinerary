@@ -1,46 +1,132 @@
-/* Filler CSS to be replaced */
-
-body {
-    font-family: Arial, sans-serif;
+/* General Reset */
+* {
     margin: 0;
     padding: 0;
-    background-color: #f4f4f4;
+    box-sizing: border-box;
 }
 
-header {
+/* Navbar Styles */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
     background-color: #333;
-    color: #fff;
-    padding: 10px 0;
-    text-align: center;
+    color: white;
 }
 
-nav {
-    margin: 0;
-    padding: 10px;
-    background-color: #444;
-    text-align: center;
+.nav-links {
+    list-style-type: none;
 }
 
-nav a {
-    color: #fff;
-    margin: 0 15px;
+.nav-links li {
+    display: inline;
+    margin-left: 20px;
+}
+
+.nav-links a {
     text-decoration: none;
+    color: white;
+    font-weight: bold;
 }
 
-nav a:hover {
-    text-decoration: underline;
-}
-
-main {
-    padding: 20px;
-}
-
-footer {
-    background-color: #333;
-    color: #fff;
+/* Main Container */
+.container {
     text-align: center;
-    padding: 10px 0;
+    margin: 50px auto;
+    width: 80%;
+}
+
+/* Search Box */
+.search-box {
+    margin: 20px auto;
+}
+
+.search-box input[type="text"] {
+    padding: 10px;
+    width: 300px;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+}
+
+.search-box button {
+    padding: 10px 15px;
+    background-color: #38b6ff; /* Custom color */
+    color: white; /* Text color */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.search-box button:hover {
+    background-color: #2a9cd8; /* Slightly darker shade on hover */
+}
+
+/* Suggestions Grid */
+.suggestions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.suggestion-item {
+    background-color: #f4f4f4;
+    padding: 10px; /* Reduced padding */
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    height: 80px; /* Set a smaller specific height for suggestion cards */
+}
+
+.suggestion-item:hover {
+    background-color: #e2e2e2;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 20px;
+    background-color: #333;
+    color: black;
     position: fixed;
-    width: 100%;
     bottom: 0;
+    width: 100%;
+}
+
+/* Centered logo */
+.text-center img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Styling for suggestion boxes */
+.suggestion-box {
+    background-color: #f8f9fa;
+    transition: background-color 0.3s ease;
+}
+
+.suggestion-box:hover {
+    background-color: #e2e6ea;
+}
+
+.suggestion-item .card-body {
+    display: flex; /* Center content vertically */
+    align-items: center; /* Center content vertically */
+    justify-content: center; /* Center content horizontally */
+}
+
+/* Search Box Button */
+.input-group .btn {
+    padding: 10px 15px;
+    background-color: #38b6ff !important; /* Custom color */
+    color: white !important; /* Text color */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.input-group .btn:hover {
+    background-color: #2a9cd8 !important; /* Slightly darker shade on hover */
 }

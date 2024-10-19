@@ -10,10 +10,10 @@
         <p class="lead">Plan your perfect trip with Travel Itinerary.</p>
 
         <!-- Search Box with Submit Button -->
-        <div class="input-group mb-3 w-50 mx-auto">
-            <input type="text" class="form-control" id="destinationInput" placeholder="Enter your travel destination" aria-label="Travel destination">
-            <button class="btn ms-2" type="button">Submit</button>
-        </div>
+        <form action="{{ url_for('index') }}" method="POST" class="input-group mb-3 w-50 mx-auto">
+            <input type="text" class="form-control" id="destinationInput" name="destinationInput" placeholder="Enter your travel destination" aria-label="Travel destination">
+            <button class="btn ms-2" type="submit">Submit</button>
+        </form>
 
         <!-- Suggested Boxes -->
         <div class="row row-cols-1 row-cols-md-4 g-4">

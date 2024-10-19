@@ -1,23 +1,48 @@
 # Description: This file contains the code for the Flask app that will be used to run the web application.
 # Imports the necessary modules and libraries
 from flask import Flask, render_template, request, url_for, flash, redirect
-from integrations import send_quiz_to_gpt, pexels_images
+from integrations import send_quiz_to_gpt, pexels_images, get_custom_quiz
 
 
 # Creates a Flask app
 app = Flask(__name__)
 
 # Route for the index page
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    # Return the index page
-    return render_template('index.html')
+    if request.method == 'POST':
+        # Get the destination input from the form
+        destination = request.form.get('destinationInput')
 
-# Quiz page test 
+        if destination:
+            # Pass the destination to the get_custom_quiz method
+            custom_quiz = get_custom_quiz(destination)
+
+            # Print the result for testing (optional)
+            print(custom_quiz)
+
+            # Render the index page again but with the custom quiz result
+            return render_template('quiz.html', custom_quiz=custom_quiz)
+
+        else:
+            # If no input was provided, flash an error message
+            flash('Please enter a destination or select a suggestion.', 'error')
+            return redirect(url_for('index'))
+
+    # For a GET request, just render the index page without any quiz
+    return render_template('index.html', quiz=None)
+
 @app.route('/quiz', methods=['GET', 'POST'])
 def quiz():
     if request.method == 'POST':
-        # Get user answers from the form
+        # Check if custom quiz data was passed along
+        if 'custom_quiz' in request.form:
+            custom_quiz = request.form['custom_quiz']
+            
+            # Render the quiz form with the custom questions
+            return render_template('quiz.html', quiz=custom_quiz)
+        
+        # Otherwise, process the user's answers to the quiz
         user_answers = [
             request.form.get('answer1'),
             request.form.get('answer2'),
@@ -34,7 +59,7 @@ def quiz():
         # Combine user answers into a single message or format as needed
         formatted_answers = ', '.join(user_answers)
 
-        # Inside the quiz() function after calling send_quiz_to_gpt
+        # Call the method to send quiz answers to GPT
         gpt_response = send_quiz_to_gpt(formatted_answers)
 
         # Extract summary and destinations from the response
@@ -48,7 +73,8 @@ def quiz():
         # Render the response in a new template or display it on the same page
         return render_template('quiz_response.html', summary=summary, destinations=destinations)
 
-    return render_template('quiz.html')  # Render the quiz form on GET request
+    # If no POST request, just render the quiz form (for GET request)
+    return render_template('quiz.html')
 
 @app.route('/pexels_test')
 def pexels_test():

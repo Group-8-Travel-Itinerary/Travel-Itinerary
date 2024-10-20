@@ -181,5 +181,3 @@ def pexels_images(query, per_page=10):
         photos = response_data.get("photos", [])
         image_urls = [photo["src"]["original"] for photo in photos]
         return image_urls
-    
-print(pexels_images("iceland"))

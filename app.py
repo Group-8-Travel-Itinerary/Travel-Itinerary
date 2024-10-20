@@ -1,7 +1,7 @@
 # Description: This file contains the code for the Flask app that will be used to run the web application.
 # Imports the necessary modules and libraries
 from flask import Flask, render_template, request, url_for, flash, redirect
-from integrations import send_quiz_to_gpt, pexels_images, get_custom_quiz
+from integrations import send_quiz_to_gpt, pexels_images, get_custom_quiz, flights_api, weather_api
 
 
 # Creates a Flask app
@@ -76,13 +76,25 @@ def quiz():
     # If no POST request, just render the quiz form (for GET request)
     return render_template('quiz.html')
 
-@app.route('/pexels_test')
-def pexels_test():
-    # Call the Pexels API function to get images
-    images = pexels_images('amsterdam in winter')
-
-    # Render the images on a new template
-    return render_template('pexels_test.html', images=images)
+@app.route('/itenary', methods=['GET', 'POST'])
+def itenary():
+    if request.method == 'POST':
+        # Get the destination input
+        destination = ''
+        
+        # Call the Pexels API function to get images
+        images = pexels_images(destination)
+        
+        # Call the Flights API function to get flight information
+        flights = flights_api()
+        
+        # Call the Weather API function to get weather information
+        weather = weather_api(destination)
+        
+        # Combine the data and render a new template
+        return render_template('itenary.html', images=images, flights=flights, weather=weather)
+    
+    return redirect(url_for('index', info='Please enter a destination to view your itenary.'))
 
 if __name__ == '__main__':
     app.run(debug=True)

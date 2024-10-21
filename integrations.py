@@ -4,6 +4,7 @@ import requests
 import json
 import openai
 import yaml
+from datetime import datetime, timedelta
 
 # Load the API keys from the config file
 credentials = yaml.load(open('config.yaml'), Loader=yaml.FullLoader)
@@ -81,17 +82,37 @@ def load_gpt_instructions(file_path):
 flight_api_key = '25518d873f8d61a061c9059b8d54db74aa5316163e871374a1ed3b579ce4c5ed'
 
 # Function to get data from a flights API to give an idea of the prices
-def flights():
-    # Flight API URL
-    url = "https://serpapi.com/search?engine=google_flights"
-
-    response = requests.get(url)
-    if response.status_code != 200:
-        error_content = response.text
-        return {"error": f"Error: {response.status_code}", "message": error_content}
-    else:
+def flights(cities, start_date, end_date):
+    flight_data = {}
+    
+    for city in cities:
+        # Flight API URL with parameters
+        url = f"https://serpapi.com/search?engine=google_flights&q=flights+to+{city}&start_date={start_date}&end_date={end_date}&api_key={flight_api_key}"
+        
+        response = requests.get(url)
+        if response.status_code != 200:
+            error_content = response.text
+            flight_data[city] = {"error": f"Error: {response.status_code}", "message": error_content}
+            continue
+        
         response_data = response.json()
-        return response_data
+        
+        # Extracting departure and return dates
+        try:
+            departure_date = response_data['flights_results'][0]['departure_date']
+            return_date = response_data['flights_results'][0]['return_date']
+            flight_data[city] = {"departure_date": departure_date, "return_date": return_date}
+        except (IndexError, KeyError) as e:
+            flight_data[city] = {"error": "No flight data found", "details": str(e)}
+    
+    return flight_data
+
+# Example usage
+cities = ["New York", "Los Angeles", "Chicago"]
+start_date = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
+end_date = (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
+
+print(flights(cities, start_date, end_date))
 
 # Weather API key
 weather_api_key = '5f27832dfc3b15ad2b12926ec704e8d7'

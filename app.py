@@ -98,55 +98,6 @@ def itenary():
     
     return redirect(url_for('index', info='Please enter a destination to view your itenary.'))
 
-# Authentication routes
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        # Get the username and password from the form
-        username = request.form.get('username')
-        password = request.form.get('password')
-
-        # Check if the username and password are correct
-        # WIP: Add a check for valid credentials
-        if username == '' and password == '':
-            # Redirect to the index page
-            return redirect(url_for('index'))
-        else:
-            # Flash an error message if the credentials are incorrect
-            flash('Invalid username or password. Please try again.', 'error')
-            
-@app.route('/logout')
-def logout():
-    # Redirect to the login page
-    #  WIP: Add a logout functionality
-    return redirect(url_for('login'))
-
-@app.route('/signup', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        # Get the signup details from the form
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-
-        # Check if the passwords match
-        if password != confirm_password:
-            flash('Passwords do not match. Please try again.', 'error')
-            return redirect(url_for('register'))
-
-        # Check if the username is already taken
-        # WIP: Add a check for existing usernames
-        # WIP: Add a check for existing emails
-        # WIP: Add a function for storing user data in a database
-
-        # Register the user and redirect to the login page
-        flash('Registration successful. Please log in.', 'success')
-        return redirect(url_for('login'))
-
-    return render_template('.html')
-
-
 
 # Run the Flask app
 if __name__ == '__main__':

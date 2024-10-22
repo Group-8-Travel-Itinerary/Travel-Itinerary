@@ -170,7 +170,8 @@ def pexels_images(query, per_page=10):
         "query": query,
         "per_page": per_page
     }
-        
+    
+    
     response = requests.get(url, headers=headers, params=params)
         
     if response.status_code != 200:
@@ -181,12 +182,3 @@ def pexels_images(query, per_page=10):
         photos = response_data.get("photos", [])
         image_urls = [photo["src"]["original"] for photo in photos]
         return image_urls
-    
-# Authentication
-def login_db(username, password):
-    # Function to check the username and password against a database
-    return "WIP"
-
-def register_db(forename, surname, email, username, password):
-    # Function to register a new user in the database
-    return "WIP"

@@ -153,11 +153,11 @@ def load_gpt_instructions(file_path):
     return file.read()
 
 # Function to get data from a flights API to give an idea of the prices
-def flights():
+def flights_api(destination, origin, departure_date, return_date):
     return "WIP"
 
 # Function to get the weather data from an API
-def weather():
+def weather_api(destination):
     return "WIP"
 
 def pexels_images(query, per_page=10):
@@ -170,7 +170,8 @@ def pexels_images(query, per_page=10):
         "query": query,
         "per_page": per_page
     }
-        
+    
+    
     response = requests.get(url, headers=headers, params=params)
         
     if response.status_code != 200:

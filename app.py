@@ -1,7 +1,7 @@
 # Description: This file contains the code for the Flask app that will be used to run the web application.
 # Imports the necessary modules and libraries
 from flask import Flask, render_template, request, url_for, flash, redirect
-from integrations import send_quiz_to_gpt, pexels_images, get_custom_quiz, flights_api, weather_api, login_db, register_db
+from integrations import send_quiz_to_gpt, pexels_images, get_custom_quiz, flights_api, weather_api
 
 
 # Creates a Flask app

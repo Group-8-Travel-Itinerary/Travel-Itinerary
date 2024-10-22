@@ -1,6 +1,87 @@
 {% extends "base.html" %}
 
+{% block title %}Home - Travel Itinerary{% endblock %}
+
 {% block content %}
-<h1>Welcome to the Travel Itinerary</h1>
-<p>This is the homepage for our travel itinerary project.</p>
+    <div class="text-center">
+        <!-- Centered Logo -->
+        <img src="/static/travel-ai.png" alt="Travel Itinerary Logo" width="200" height="200" class="my-4">
+        <h1 class="mb-4">Welcome to TravelAI</h1>
+        <p class="lead">Plan your perfect trip with Travel Itinerary.</p>
+
+        <!-- Search Box with Submit Button -->
+        <form action="{{ url_for('index') }}" method="POST" class="input-group mb-3 w-50 mx-auto">
+            <input type="text" class="form-control" id="destinationInput" name="destinationInput" placeholder="Enter your travel destination" aria-label="Travel destination">
+            <button class="btn ms-2" type="submit">Submit</button>
+        </form>
+
+        <!-- Suggested Boxes -->
+        <div class="row row-cols-1 row-cols-md-4 g-4">
+            <div class="col">
+                <div class="card h-100 suggestion-item" onclick="sendSuggestion('America')">
+                    <div class="card-body">
+                        <h5 class="card-title">America</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 suggestion-item" onclick="sendSuggestion('I want to go somewhere hot')">
+                    <div class="card-body">
+                        <h5 class="card-title">I want to go somewhere hot</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 suggestion-item" onclick="sendSuggestion('Plan a 2 day trip to Edinburgh')">
+                    <div class="card-body">
+                        <h5 class="card-title">Plan a 2 day trip to Edinburgh</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 suggestion-item" onclick="sendSuggestion('Pick a random place')">
+                    <div class="card-body">
+                        <h5 class="card-title">Pick a random place</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 suggestion-item" onclick="sendSuggestion('Plan a winter get away')">
+                    <div class="card-body">
+                        <h5 class="card-title">Plan a winter get away</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 suggestion-item" onclick="sendSuggestion('Make me a 3 day itinerary')">
+                    <div class="card-body">
+                        <h5 class="card-title">Make me a 3 day itinerary</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 suggestion-item" onclick="sendSuggestion('I want to see the northern lights')">
+                    <div class="card-body">
+                        <h5 class="card-title">I want to see the northern lights</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 suggestion-item" onclick="sendSuggestion('Plan me a road trip in Europe')">
+                    <div class="card-body">
+                        <h5 class="card-title">Plan me a road trip in Europe</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to handle suggestion click
+        function sendSuggestion(suggestion) {
+            alert(`You selected: ${suggestion}`); // Display alert with the selected suggestion
+            const inputField = document.getElementById('destinationInput');
+            inputField.value = suggestion; // Set the clicked suggestion as the input value
+        }
+    </script>
 {% endblock %}

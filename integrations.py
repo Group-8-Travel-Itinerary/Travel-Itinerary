@@ -115,7 +115,7 @@ end_date = (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
 print(flights(cities, start_date, end_date))
 
 # Weather API key
-weather_api_key = '5f27832dfc3b15ad2b12926ec704e8d7'
+weather_api_key = '5f27832dfc3b15ad2b12926ec704e8d7' 
 
 # Function to get the weather data from an API
 def weather(cities):
@@ -179,4 +179,4 @@ def pexels_images(query, per_page=10):
         image_urls = [photo["src"]["original"] for photo in photos]
         return image_urls
     
-print(pexels_images("iceland"))
+print(weather(["New York", "Los Angeles", "Chicago"]))

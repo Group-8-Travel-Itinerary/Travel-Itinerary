@@ -187,7 +187,7 @@ cities = ["New York", "Los Angeles", "Chicago"]
 start_date = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
 end_date = (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
 
-print(flights(cities, start_date, end_date))
+print(flights_api(cities, start_date, end_date))
 
 # Weather API key
 weather_api_key = '5f27832dfc3b15ad2b12926ec704e8d7' 
@@ -215,19 +215,40 @@ def weather_api(cities):
         lon = response_data[0]["lon"]
 
         # Once we have the latitude and longitude, we can use the One Call API to get the weather data
-        weather_url = f"http://api.openweathermap.org/data/2.5/onecall?lat={lat}&lon={lon}&exclude=minutely&appid={weather_api_key}"
+        weather_url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={weather_api_key}&units=metric" 
         response = requests.get(weather_url)
 
         if response.status_code != 200:
             error_content = response.text
             weather_data[city] = {"error": f"Error: {response.status_code}", "message": error_content}
             continue
-        
+
         response_data = response.json()
-        temperature = response_data["current"]["temp"]
-        weather_description = response_data["current"]["weather"][0]["description"]
-        
-        weather_data[city] = {"temperature": temperature, "weather": weather_description}
+
+        # Extracting required fields
+        coord = response_data["coord"]
+        main = response_data["main"]
+        weather = response_data["weather"][0]
+        wind = response_data["wind"]
+        sys = response_data["sys"]
+
+        # Storing extracted data in weather_data
+        weather_data[city] = {
+            "latitude": coord["lat"],
+            "longitude": coord["lon"],
+            "temperature": main["temp"],
+            "feels_like": main["feels_like"],
+            "temp_min": main["temp_min"],
+            "temp_max": main["temp_max"],
+            "pressure": main["pressure"],
+            "humidity": main["humidity"],
+            "weather_description": weather["description"],
+            "wind_speed": wind["speed"],
+            "wind_deg": wind["deg"],
+            "country": sys["country"],
+            "sunrise": sys["sunrise"],
+            "sunset": sys["sunset"]
+        }
     
     return weather_data
 
@@ -255,4 +276,4 @@ def pexels_images(query, per_page=10):
         
         return image_urls
     
-print(weather(["New York", "Los Angeles", "Chicago"]))
+print(weather_api(["New York", "Los Angeles", "Chicago"]))

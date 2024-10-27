@@ -8,13 +8,12 @@ import yaml
 # Load the API keys from the config file
 credentials = yaml.load(open('config.yaml'), Loader=yaml.FullLoader)
 pexels_api_key = credentials['pexels']['api_key']
-
+openai.api_key = credentials['open_ai']['api_key']
 # Function to get the data from the Google Places API
 def google_places():
     return "WIP"
 
-# OpenAI API key
-openai.api_key = ''
+
 
 
 # Function for sending quiz answers to GPT API
@@ -109,42 +108,53 @@ def send_quiz_to_gpt(message, OptionalCustomQuiz=None):
         except json.JSONDecodeError as e:
             return {"error": "Failed to decode JSON", "details": str(e)}
 
-def get_custom_quiz(prompt):
-    # Define the model you want to use
-    model = "gpt-4o"  # Adjust the model name based on what you're using
 
-    # Construct the message to be sent to GPT
+def get_custom_quiz(prompt):
+    model = "gpt-4o"  # Ensure the correct model name is used
+
     messages = [
         {"role": "system", "content": "You are an expert travel assistant."},
-        {"role": "user", "content": f"Create a personalized 10-question travel personality quiz for a user who is interested in: {prompt}. The quiz should focus on gathering preferences that will help recommend destinations, activities, accommodations, and other travel-related suggestions but based around what they are intrested in."}
+        {
+            "role": "user",
+            "content": f"""Create a personalized 10-question travel personality quiz for a user interested in: {prompt}. Format the response in JSON with the following structure:
+            {{
+                "quiz_title": "Travel Personality Quiz",
+                "questions": [
+                    {{
+                        "question": "Question 1 text here",
+                        "options": [
+                            {{"option": "A", "text": "Option A text here"}},
+                            {{"option": "B", "text": "Option B text here"}}
+                        ],
+                        "keyword": ["keyword"]
+                    }},
+                    // Continue for all 10 questions
+                ]
+            }}"""
+        }
     ]
 
-    # Build the request body
     request_body = {
         "model": model,
         "messages": messages,
-        "max_tokens": 2000  # Adjust token limit if needed
+        "max_tokens": 2000
     }
 
-    # Set up the API URL and headers
     url = "https://api.openai.com/v1/chat/completions"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {openai.api_key}"  # Ensure the API key is set
+        "Authorization": f"Bearer {openai.api_key}"  # Ensure your API key is configured
     }
 
-    # Make the API request
-    response = requests.post(url, headers=headers, data=json.dumps(request_body))
+    response = requests.post(url, headers=headers, json=request_body)
 
-    # Check for a successful response
     if response.status_code == 200:
         response_data = response.json()
         quiz_content = response_data["choices"][0]["message"]["content"]
         return quiz_content
     else:
-        return {"error": f"API returned an error: {response.status_code}", "message": response.text}
-
-    
+        flash(f"Error fetching quiz: {response.text}", "error")
+        return None
     
 # Return gpt instruction for a specific step as string
 def load_gpt_instructions(file_path):
@@ -182,3 +192,54 @@ def pexels_images(query, per_page=10):
         return image_urls
     
 print(pexels_images("iceland"))
+
+
+import requests
+
+def fetch_animation_url(keyword):
+    # Use LottieFiles' public API endpoint to search animations by keyword
+    search_url = f"https://assets7.lottiefiles.com/api/v1/animations/search?search={keyword}&limit=1"
+
+    response = requests.get(search_url)
+    
+    if response.status_code == 200:
+        try:
+            animation_data = response.json()
+            # Check if the data contains any animations
+            if animation_data.get("data"):
+                # Extract the first animation's URL if available
+                animation_url = animation_data["data"][0]["lottie_url"]
+                return animation_url
+            else:
+                print(f"No animation found for keyword: {keyword}")
+                return None
+        except ValueError:
+            print(f"Error parsing JSON response for keyword '{keyword}'")
+            return None
+    else:
+        print(f"Error: Request to LottieFiles failed with status code {response.status_code}")
+        return None
+
+def get_quiz_animations(quiz_json):
+    animations = {}
+    
+    quiz_data = json.loads(quiz_json)
+    
+    for question in quiz_data["questions"]:
+        question_text = question["question"]
+        keywords = question["keyword"]
+        
+        # Fetch animation URLs for each keyword
+        animation_urls = []
+        for keyword in keywords:
+            url = fetch_animation_url(keyword)
+            if url:
+                animation_urls.append(url)
+            else:
+                print(f"No URL found for keyword: {keyword}")
+        
+        # Store the results in the animations dictionary
+        animations[question_text] = animation_urls
+        print(f"Question: {question_text} - Animation URLs: {animation_urls}")
+    
+    return animations

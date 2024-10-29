@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activities for {{ destination }}</title>
+</head>
+<body>
+    <h1>Activities for {{ destination }}</h1>
+    <div>
+        {% if activities.error %}
+            <p>{{ activities.error }}</p>
+        {% else %}
+            <ul>
+                {% for activity in activities.activities %}
+                    <li><strong>{{ activity.name }}</strong>: {{ activity.description }} (Type: {{ activity.type }})</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+    <a href="{{ url_for('index') }}">Go back to home</a>
+</body>
+</html>

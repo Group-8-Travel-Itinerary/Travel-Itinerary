@@ -1,10 +1,15 @@
 # Description: This file contains the integrations with external APIs
 # Imports the necessary modules and libraries
+import logging
 import requests
 import json
 import openai
 import yaml
 from datetime import datetime, timedelta
+from flask import session  
+from flask import flash
+
+
 
 # Load the API keys from the config file
 credentials = yaml.load(open('config.yaml'), Loader=yaml.FullLoader)
@@ -17,8 +22,7 @@ flight_api_key = credentials['flights']['api_key']
 def google_places():
     return "WIP"
 
-# OpenAI API key
-openai.api_key = ''
+
 
 
 # Function for sending quiz answers to GPT API
@@ -114,40 +118,52 @@ def send_quiz_to_gpt(message, OptionalCustomQuiz=None):
             return {"error": "Failed to decode JSON", "details": str(e)}
 
 def get_custom_quiz(prompt):
-    # Define the model you want to use
-    model = "gpt-4o"  # Adjust the model name based on what you're using
+    model = "gpt-4o"  # Ensure the correct model name is used
 
-    # Construct the message to be sent to GPT
     messages = [
         {"role": "system", "content": "You are an expert travel assistant."},
-        {"role": "user", "content": f"Create a personalized 10-question travel personality quiz for a user who is interested in: {prompt}. The quiz should focus on gathering preferences that will help recommend destinations, activities, accommodations, and other travel-related suggestions but based around what they are intrested in."}
+        {
+            "role": "user",
+            "content": f"""Create a personalized 10-question travel personality quiz for a user interested in: {prompt}. Format the response in JSON with the following structure:
+            {{
+                "quiz_title": "Travel Personality Quiz",
+                "questions": [
+                    {{
+                        "question": "Question 1 text here",
+                        "options": [
+                            {{"option": "A", "text": "Option A text here"}},
+                            {{"option": "B", "text": "Option B text here"}}
+                        ],
+                        "keyword": ["keyword"]
+                    }},
+                    // Continue for all 10 questions
+                ]
+            }}"""
+        }
     ]
 
-    # Build the request body
     request_body = {
         "model": model,
         "messages": messages,
-        "max_tokens": 2000  # Adjust token limit if needed
+        "max_tokens": 2000
     }
 
-    # Set up the API URL and headers
     url = "https://api.openai.com/v1/chat/completions"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {openai.api_key}"  # Ensure the API key is set
+        "Authorization": f"Bearer {openai.api_key}"  # Ensure your API key is configured
     }
 
-    # Make the API request
-    response = requests.post(url, headers=headers, data=json.dumps(request_body))
+    response = requests.post(url, headers=headers, json=request_body)
 
-    # Check for a successful response
     if response.status_code == 200:
         response_data = response.json()
         quiz_content = response_data["choices"][0]["message"]["content"]
         return quiz_content
     else:
-        return {"error": f"API returned an error: {response.status_code}", "message": response.text}
-
+        flash(f"Error fetching quiz: {response.text}", "error")
+        return None
+    
     
     
 # Return gpt instruction for a specific step as string
@@ -215,6 +231,7 @@ def flights_api(base_city, cities, start_date, end_date):
             flight_data[city] = {"error": "No flight data found", "details": str(e)}
     
     return flight_data
+
 
 # Function to get the weather data from an API
 def weather_api(cities):
@@ -342,11 +359,113 @@ def pexels_images(query, per_page=10):
         image_urls = [photo["src"]["original"] for photo in photos]
         
         return image_urls
+
+#not sure why this is here   
+#print(weather_api(["New York", "Los Angeles", "Chicago"]))
+
+#not sure why this is here 
+#cities = ["New York", "Los Angeles", "Chicago"]
+#start_date = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
+#end_date = (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
+
+#print(flights_api("Glasgow", cities, start_date, end_date))
+
+
+def get_activities(destination, preferences):
+    # Define the prompt for OpenAI to generate activities
+    prompt = f"""
+    You are a travel assistant. A user is planning a trip to {destination} and has specific preferences based on a travel quiz.
+    Here are the preferences: {preferences}.
     
-print(weather_api(["New York", "Los Angeles", "Chicago"]))
+    Recommend a list of activities that align with these preferences. Format the response in JSON with the following structure:
+    {{
+        "destination": "{destination}",
+        "activities": [
+            {{
+                "name": "Activity name here",
+                "type": "Type (e.g., adventure, relaxation, cultural)",
+                "description": "Brief description of the activity"
+            }}
+        ]
+    }}
+    Only include activities that directly match the user's preferences.
+    """
 
-cities = ["New York", "Los Angeles", "Chicago"]
-start_date = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
-end_date = (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
+    # Create the request body
+    request_body = {
+        "model": "gpt-4o",  # Ensure this is the correct model name
+        "messages": [
+            {"role": "system", "content": "You are a knowledgeable travel assistant."},
+            {"role": "user", "content": prompt}
+        ],
+        "max_tokens": 500
+    }
 
-print(flights_api("Glasgow", cities, start_date, end_date))
+    # Serialize the request body to JSON
+    json_data = json.dumps(request_body)
+
+    # Set the API URL
+    url = "https://api.openai.com/v1/chat/completions"
+
+    # Define headers, including the API key
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {openai.api_key}"  # Ensure the API key is set in your environment or code
+    }
+
+    # Make the API call to the chat completions endpoint
+    response = requests.post(url, headers=headers, data=json_data)
+
+    # Check if the response is successful
+    if response.status_code != 200:
+        error_content = response.text
+        logging.error(f"OpenAI API error: {error_content}")
+        return {"error": f"Error: {response.status_code}", "message": error_content}
+    else:
+        # Process and parse the successful response
+        response_data = response.json()
+        content = response_data["choices"][0]["message"]["content"]
+
+        # Clean up the content if needed and parse it as JSON
+        if content.startswith("```json"):
+            content = content[8:-3].strip()  # Remove the code block markers
+
+        try:
+            activities_data = json.loads(content)
+            logging.info(f"Activities: {json.dumps(activities_data, indent=2)}")
+            return activities_data
+        except json.JSONDecodeError as e:
+            logging.error("Failed to decode JSON response.")
+            return {"error": "Failed to decode JSON", "details": str(e)}
+
+def concat_preferences_for_activities():
+    # Retrieve stored data from session
+    if(session.get('initial_prompt', '')):
+      initial_prompt = session.get('initial_prompt', '')
+    
+    # Check if 'custom_quiz' is available in the session; if not, load instructions
+    if session.get('custom_quiz'):
+        quiz = session.get('custom_quiz', '')
+    else:
+        quiz = load_gpt_instructions('gpt_instructions/quiz_instructions.txt')
+    
+    formatted_answers = session.get('formatted_answers', '')
+    summary = session.get('summary', '')
+    destinations = session.get('destinations', [])
+
+    destination = session.get('destination', '')
+
+    # Formulate the prompt with session data
+    activities_prompt = (
+        f"The user selected {destination} as their destination. "
+        f"Here is the quiz they were given: {quiz}. "
+        f"Their answers to the quiz: {formatted_answers}. "
+        f"Summary of preferences: {summary}. "
+        f"Here were the output suggestions for the destination. Use the provided destination to find activities that match {destinations}. "
+        f"Based on this, suggest activities that align with these preferences. "
+        f"Please format the activities in JSON format, with each activity containing a 'name', 'type', and 'description'."
+    )
+
+    # Return the prompt for use with OpenAI
+    return activities_prompt
+

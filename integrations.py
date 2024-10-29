@@ -157,12 +157,16 @@ def load_gpt_instructions(file_path):
 flight_api_key = '25518d873f8d61a061c9059b8d54db74aa5316163e871374a1ed3b579ce4c5ed'
 
 # Function to get data from a flights API to give an idea of the prices
-def flights_api(cities, start_date, end_date):
+def flights_api(base_city, cities, start_date, end_date):
     flight_data = {}
     
     for city in cities:
+        # Get FreebaseID for the city
+        freebase_id = get_freebase_id(city)
+        base_freebase_id = get_freebase_id(base_city)
+        
         # Flight API URL with parameters
-        url = f"https://serpapi.com/search?engine=google_flights&q=flights+to+{city}&start_date={start_date}&end_date={end_date}&api_key={flight_api_key}"
+        url = f"https://serpapi.com/search.json?engine=google_flights&departure_id={base_freebase_id}&arrival_id={freebase_id}&outbound_date={start_date}&return_date={end_date}&currency=GBP&api_key={flight_api_key}&hl=en"
         
         response = requests.get(url)
         if response.status_code != 200:
@@ -172,22 +176,46 @@ def flights_api(cities, start_date, end_date):
         
         response_data = response.json()
         
-        # Extracting departure and return dates
+        # Extracting useful information from the response
         try:
-            departure_date = response_data['flights_results'][0]['departure_date']
-            return_date = response_data['flights_results'][0]['return_date']
-            flight_data[city] = {"departure_date": departure_date, "return_date": return_date}
+            best_flight = response_data['best_flights'][0]
+            flights = best_flight['flights']
+            layovers = best_flight.get('layovers', [])
+            total_duration = best_flight['total_duration']
+            carbon_emissions = best_flight['carbon_emissions']['this_flight']
+            price = best_flight['price']
+            airline_logo = best_flight['airline_logo']
+            
+            flight_info = {
+                "flights": [],
+                "layovers": layovers,
+                "total_duration": total_duration,
+                "carbon_emissions": carbon_emissions,
+                "price": price,
+                "airline_logo": airline_logo
+            }
+            
+            for flight in flights:
+                flight_info["flights"].append({
+                    "departure_airport": flight['departure_airport']['name'],
+                    "departure_time": flight['departure_airport']['time'],
+                    "arrival_airport": flight['arrival_airport']['name'],
+                    "arrival_time": flight['arrival_airport']['time'],
+                    "duration": flight['duration'],
+                    "airplane": flight['airplane'],
+                    "airline": flight['airline'],
+                    "airline_logo": flight['airline_logo'],
+                    "travel_class": flight['travel_class'],
+                    "flight_number": flight['flight_number'],
+                    "legroom": flight['legroom'],
+                    "extensions": flight['extensions']
+                })
+            
+            flight_data[city] = flight_info
         except (IndexError, KeyError) as e:
             flight_data[city] = {"error": "No flight data found", "details": str(e)}
     
     return flight_data
-
-# Example usage
-cities = ["New York", "Los Angeles", "Chicago"]
-start_date = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
-end_date = (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
-
-print(flights_api(cities, start_date, end_date))
 
 # Weather API key
 weather_api_key = '5f27832dfc3b15ad2b12926ec704e8d7' 
@@ -252,6 +280,49 @@ def weather_api(cities):
     
     return weather_data
 
+def get_freebase_id(city_name):
+    # Define the Wikidata API endpoint
+    wikidata_url = 'https://www.wikidata.org/w/api.php'
+
+    # Define the parameters for the API request
+    params = {
+        'action': 'wbsearchentities',
+        'search': city_name,
+        'language': 'en',
+        'format': 'json'
+    }
+
+    # Make the API request
+    response = requests.get(wikidata_url, params=params)
+    data = response.json()
+
+    # Check if the city was found
+    if not data['search']:
+        return None
+
+    # Get the Wikidata entity ID for the city
+    entity_id = data['search'][0]['id']
+
+    # Define the parameters to get the entity data
+    params = {
+        'action': 'wbgetentities',
+        'ids': entity_id,
+        'props': 'claims',
+        'format': 'json'
+    }
+
+    # Make the API request to get the entity data
+    response = requests.get(wikidata_url, params=params)
+    data = response.json()
+
+    # Extract the Freebase ID (P646) from the entity data
+    claims = data['entities'][entity_id]['claims']
+    if 'P646' in claims:
+        freebase_id = claims['P646'][0]['mainsnak']['datavalue']['value']
+        return freebase_id
+
+    return None
+
 def pexels_images(query, per_page=10):
     # Function to get images from Pexels API
     url = "https://api.pexels.com/v1/search"
@@ -277,3 +348,9 @@ def pexels_images(query, per_page=10):
         return image_urls
     
 print(weather_api(["New York", "Los Angeles", "Chicago"]))
+
+cities = ["New York", "Los Angeles", "Chicago"]
+start_date = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
+end_date = (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
+
+print(flights_api("Glasgow", cities, start_date, end_date))

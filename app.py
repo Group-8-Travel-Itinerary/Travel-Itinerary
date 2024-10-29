@@ -1,7 +1,8 @@
 # Description: This file contains the code for the Flask app that will be used to run the web application.
 # Imports the necessary modules and libraries
-from flask import Flask, render_template, request, url_for, flash, redirect
+from flask import Flask, render_template, request, url_for, flash, redirect, session
 from integrations import send_quiz_to_gpt, pexels_images, get_custom_quiz, flights_api, weather_api
+from datetime import datetime, timedelta
 
 
 # Creates a Flask app
@@ -20,6 +21,12 @@ def index():
 
             # Print the result for testing (optional)
             print(custom_quiz)
+            
+            base_city = session.get('base_city')
+            destination = ["New York", "Los Angeles", "Chicago"]
+            start_date = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
+            end_date = (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
+            print(flights_api(base_city, destination, start_date, end_date))
 
             # Render the index page again but with the custom quiz result
             return render_template('quiz.html', custom_quiz=custom_quiz)

@@ -2,3 +2,7 @@ pexels:
   api_key: 8eWzweGGKdrX6fuQsM1pijn8MpQAhn2TKLHWiAHn1uQvwFo1EeUuQgqi
 openai:
   api_key:
+weather: 
+  api_key: 5f27832dfc3b15ad2b12926ec704e8d7
+flight:
+  api_key: 25518d873f8d61a061c9059b8d54db74aa5316163e871374a1ed3b579ce4c5ed

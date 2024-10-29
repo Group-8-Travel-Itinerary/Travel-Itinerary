@@ -10,6 +10,8 @@ from datetime import datetime, timedelta
 credentials = yaml.load(open('config.yaml'), Loader=yaml.FullLoader)
 pexels_api_key = credentials['pexels']['api_key']
 openai.api_key = credentials['openai']['api_key']
+weather_api_key = credentials['weather']['api_key']
+flight_api_key = credentials['flights']['api_key']
 
 # Function to get the data from the Google Places API
 def google_places():
@@ -153,9 +155,6 @@ def load_gpt_instructions(file_path):
  with open(file_path, 'r') as file:
     return file.read()
 
-# Flight API key
-flight_api_key = '25518d873f8d61a061c9059b8d54db74aa5316163e871374a1ed3b579ce4c5ed'
-
 # Function to get data from a flights API to give an idea of the prices
 def flights_api(base_city, cities, start_date, end_date):
     flight_data = {}
@@ -216,9 +215,6 @@ def flights_api(base_city, cities, start_date, end_date):
             flight_data[city] = {"error": "No flight data found", "details": str(e)}
     
     return flight_data
-
-# Weather API key
-weather_api_key = '5f27832dfc3b15ad2b12926ec704e8d7' 
 
 # Function to get the weather data from an API
 def weather_api(cities):

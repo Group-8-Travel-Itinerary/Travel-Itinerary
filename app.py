@@ -1,79 +1,90 @@
 # Description: This file contains the code for the Flask app that will be used to run the web application.
 # Imports the necessary modules and libraries
-from flask import Flask, render_template, request, url_for, flash, redirect
-from integrations import send_quiz_to_gpt, pexels_images, get_custom_quiz, flights_api, weather_api
+from flask import Flask, render_template, request, url_for, flash, redirect, session
+from integrations import concat_preferences_for_activities, get_activities, send_quiz_to_gpt, pexels_images, get_custom_quiz, flights_api, weather_api
+import os
+import logging
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
 
 # Creates a Flask app
 app = Flask(__name__)
+app.secret_key = os.urandom(24)
 
-# Route for the index page
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         # Get the destination input from the form
-        destination = request.form.get('destinationInput')
+        initial_prompt = request.form.get('destinationInput')
 
-        if destination:
-            # Pass the destination to the get_custom_quiz method
-            custom_quiz = get_custom_quiz(destination)
+        if initial_prompt:
+            # Call get_custom_quiz with error handling
+            custom_quiz = get_custom_quiz(initial_prompt)
+            if custom_quiz:
+                session['custom_quiz'] = custom_quiz
+                session['initial_prompt'] = initial_prompt
+                print(custom_quiz)  # This should now print the quiz data
+                return redirect(url_for('quiz'))  # Redirect to the quiz page
 
-            # Print the result for testing (optional)
-            print(custom_quiz)
-
-            # Render the index page again but with the custom quiz result
-            return render_template('quiz.html', custom_quiz=custom_quiz)
-
+            else:
+                flash('Error retrieving quiz. Please try again.', 'error')
+                return redirect(url_for('index'))
         else:
-            # If no input was provided, flash an error message
             flash('Please enter a destination or select a suggestion.', 'error')
             return redirect(url_for('index'))
 
     # For a GET request, just render the index page without any quiz
-    return render_template('index.html', quiz=None)
+    return render_template('index.html')
 
+# Route for the quiz page
 @app.route('/quiz', methods=['GET', 'POST'])
 def quiz():
     if request.method == 'POST':
-        # Check if custom quiz data was passed along
-        if 'custom_quiz' in request.form:
-            custom_quiz = request.form['custom_quiz']
-            
-            # Render the quiz form with the custom questions
-            return render_template('quiz.html', quiz=custom_quiz)
-        
-        # Otherwise, process the user's answers to the quiz
+        # Process the user's answers to the quiz
         user_answers = [
-            request.form.get('answer1'),
-            request.form.get('answer2'),
-            request.form.get('answer3'),
-            request.form.get('answer4'),
-            request.form.get('answer5'),
-            request.form.get('answer6'),
-            request.form.get('answer7'),
-            request.form.get('answer8'),
-            request.form.get('answer9'),
-            request.form.get('answer10')
-        ]
+    request.form.get('answer1') or '',
+    request.form.get('answer2') or '',
+    request.form.get('answer3') or '',
+    request.form.get('answer4') or '',
+    request.form.get('answer5') or '',
+    request.form.get('answer6') or '',
+    request.form.get('answer7') or '',
+    request.form.get('answer8') or '',
+    request.form.get('answer9') or '',
+    request.form.get('answer10') or ''
+]
 
         # Combine user answers into a single message or format as needed
         formatted_answers = ', '.join(user_answers)
+        session['formatted_answers'] = formatted_answers
 
         # Call the method to send quiz answers to GPT
         gpt_response = send_quiz_to_gpt(formatted_answers)
 
-        # Extract summary and destinations from the response
+        # Check for 'error' key in gpt_response and handle accordingly
         if 'error' in gpt_response:
-            flash(gpt_response['message'], 'error')
+            logging.error(f"Error from GPT response: {gpt_response}")
+            error_message = gpt_response.get('message', 'Unknown error from GPT API')
             return redirect(url_for('index'))
 
-        summary = gpt_response.get('summary')
+        # Extract summary and destinations from the response
+        summary = gpt_response.get('summary', 'No summary available')
         destinations = gpt_response.get('destinations', [])
+        session['destinations'] = destinations
+        session['summary'] = summary
 
-        # Render the response in a new template or display it on the same page
+        # Render the response in a new template
         return render_template('quiz_response.html', summary=summary, destinations=destinations)
 
-    # If no POST request, just render the quiz form (for GET request)
+    # Handle GET request by loading the quiz from session if available
+    custom_quiz = session.get('custom_quiz')
+    
+    if custom_quiz:
+        # If there is a custom quiz in the session, render it
+        return render_template('quiz.html', quiz=custom_quiz)
+    
+    # Otherwise, load a basic quiz template or default quiz data
     return render_template('quiz.html')
 
 @app.route('/itenary', methods=['GET', 'POST'])
@@ -99,6 +110,27 @@ def itenary():
     return redirect(url_for('index', info='Please enter a destination to view your itenary.'))
 
 
+@app.route('/activities', methods=['POST'])
+def activities():
+    selected_destination = request.form.get('selected_destination')
+    session['destination'] = selected_destination
+    
+    # Retrieve the prompt based on session data
+    prompt = concat_preferences_for_activities()
+
+    # Get activities based on the selected destination and prompt
+    activities_data = get_activities(selected_destination, prompt)
+    logging.info(f"Activities: {activities_data}")
+
+    # Render the activities page with error handling
+    return render_template('activities.html', destination=selected_destination, activities=activities_data)
+
 # Run the Flask app
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
+
+    # Print activities in JSON format using method 
+#print(json.dumps(get_activities(destination, preferences), indent=4))

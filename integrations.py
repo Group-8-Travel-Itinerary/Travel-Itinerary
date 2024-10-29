@@ -121,26 +121,29 @@ def get_custom_quiz(prompt):
     model = "gpt-4o"  # Ensure the correct model name is used
 
     messages = [
-        {"role": "system", "content": "You are an expert travel assistant."},
-        {
-            "role": "user",
-            "content": f"""Create a personalized 10-question travel personality quiz for a user interested in: {prompt}. Format the response in JSON with the following structure:
-            {{
-                "quiz_title": "Travel Personality Quiz",
-                "questions": [
-                    {{
-                        "question": "Question 1 text here",
-                        "options": [
-                            {{"option": "A", "text": "Option A text here"}},
-                            {{"option": "B", "text": "Option B text here"}}
-                        ],
-                        "keyword": ["keyword"]
-                    }},
-                    // Continue for all 10 questions
-                ]
-            }}"""
-        }
-    ]
+    {"role": "system", "content": "You are an expert travel assistant."},
+    {
+        "role": "user",
+        "content": f"""Create a personalized 10-question travel personality quiz for a user interested in: {prompt}. Format the response in JSON with the following structure:
+        {{
+            "quiz_title": "Travel Personality Quiz",
+            "questions": [
+                {{
+                    "question": "Question 1 text here",
+                    "options": [
+                        {{"option": "A", "text": "Option A text here", "icon": "fas fa-icon-for-a"}} ,
+                        {{"option": "B", "text": "Option B text here", "icon": "fas fa-icon-for-b"}} ,
+                        {{"option": "C", "text": "Option C text here", "icon": "fas fa-icon-for-c"}} ,
+                        {{"option": "D", "text": "Option D text here", "icon": "fas fa-icon-for-d"}}
+                    ],
+                    "keyword": ["keyword"]
+                }},
+                // Continue for all 10 questions, adjusting the number of options as needed and including relevant icons
+            ]
+        }}"""
+    }
+]
+
 
     request_body = {
         "model": model,

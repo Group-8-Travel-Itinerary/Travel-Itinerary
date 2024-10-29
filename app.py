@@ -23,13 +23,13 @@ def index():
         if initial_prompt:
             
             #move this flights stuff to itinerary later on
-            base_city = session.get('base_city')
-            destination = ["New York", "Los Angeles", "Chicago"]
-            start_date = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
-            end_date = (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
-            print(flights_api(base_city, destination, start_date, end_date))
+            #base_city = session.get('base_city')
+            #destination = ["New York", "Los Angeles", "Chicago"]
+            #start_date = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
+            #end_date = (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
+            #print(flights_api(base_city, destination, start_date, end_date))
             
-
+            breakpoint()
             # Call get_custom_quiz with error handling
             custom_quiz = get_custom_quiz(initial_prompt)
             if custom_quiz:

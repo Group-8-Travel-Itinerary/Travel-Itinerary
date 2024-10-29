@@ -16,7 +16,7 @@ credentials = yaml.load(open('config.yaml'), Loader=yaml.FullLoader)
 pexels_api_key = credentials['pexels']['api_key']
 openai.api_key = credentials['openai']['api_key']
 weather_api_key = credentials['weather']['api_key']
-flight_api_key = credentials['flights']['api_key']
+flight_api_key = credentials['flight']['api_key']
 
 # Function to get the data from the Google Places API
 def google_places():

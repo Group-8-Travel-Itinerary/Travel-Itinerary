@@ -7,32 +7,50 @@
 </head>
 <body>
     <h1>Activities for {{ destination }}</h1>
-    <div>
-        {% if activities %}
-            <ul>
-                {% for activity in activities %}
-                    <li>
-                        <h2>{{ activity.name }}</h2>
-                        <p><strong>Type:</strong> {{ activity.type }}</p>
-                        <p><strong>Description:</strong> {{ activity.description }}</p>
-                        <!-- Link for More Info -->
-                        <a href="{{ url_for('activities', activity_id=loop.index0) }}">More Info</a>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% endif %}
+    <form action="{{ url_for('itinerary') }}" method="POST">
+        <div>
+            {% if activities %}
+                <ul>
+                    {% for activity in activities %}
+                        <li>
+                            <h2>{{ activity.name }}</h2>
+                            <p><strong>Type:</strong> {{ activity.type }}</p>
+                            <p><strong>Description:</strong> {{ activity.description }}</p>
+                            
+                            <!-- Checkbox to select activity -->
+                            <input type="checkbox" name="selected_activities" value="{{ loop.index0 }}">
+                            <label>Select Activity</label>
 
-        {% if detailed_activity %}
-            <h2>More Information for {{ detailed_activity.name }}</h2>
-            <p><strong>Type:</strong> {{ detailed_activity.type }}</p>
-            <p><strong>Description:</strong> {{ detailed_activity.description }}</p>
-            <p><strong>Address:</strong> {{ detailed_activity.address }}</p>
-            <p><strong>Rating:</strong> {{ detailed_activity.rating }} ({{ detailed_activity.total_ratings }} reviews)</p>
-            <img src="{{ detailed_activity.photo_url }}" alt="Detailed Activity Image" style="width:300px; height:auto;">
-            <br>
-            <a href="{{ detailed_activity.website }}" target="_blank">Visit Website</a>
-        {% endif %}
-    </div>
+                            <!-- Link for More Info -->
+                            <a href="{{ url_for('activities', activity_id=loop.index0) }}">More Info</a>
+
+                            {% if detailed_activities_map.get(loop.index0) %}
+                                <h3>More Details:</h3>
+                                <ul>
+                                    {% for detail in detailed_activities_map[loop.index0] %}
+                                        <li>
+                                            <p><strong>Address:</strong> {{ detail.address }}</p>
+                                            <p><strong>Rating:</strong> {{ detail.rating }} ({{ detail.total_ratings }} reviews)</p>
+                                            <img src="{{ detail.photo_url }}" alt="Detailed Activity Image" style="width:300px; height:auto;">
+                                            <br>
+                                            {% if detail.website != "Website not available" %}
+                                            <a href="{{ detail.website }}" target="_blank">Visit Website</a>
+                                            {% else %}
+                                                <p>Website not available</p>
+                                            {% endif %}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        <!-- Submit button to send selected activities to itinerary route -->
+        <button type="submit">Add Selected Activities to Itinerary</button>
+    </form>
     <a href="{{ url_for('index') }}">Go back to home</a>
 </body>
 </html>

@@ -507,3 +507,83 @@ def get_photo_url(photo_reference, api_key, max_width=400):
 
 
 
+def form_itinerary_prompt(destination, formatted_answers, quiz_instructions, itinerary_activities):
+    # Basic prompt structure
+    prompt = f"You are planning a travel itinerary for the destination: {destination}.\n\n"
+
+    # Add quiz instructions if provided
+    if quiz_instructions:
+        prompt += f"Here are some quiz instructions for better customization:\n{quiz_instructions}\n\n"
+
+    # Add answers from the user quiz
+    prompt += "User preferences based on quiz:\n"
+    for answer in formatted_answers:
+        prompt += f"- {answer}\n"
+    
+    # Add details of each selected activity
+    prompt += "\nThe selected activities for the itinerary include:\n"
+    for activity in itinerary_activities:
+        activity_details = (
+            f"Activity Name: {activity.get('name')}\n"
+            f"Type: {activity.get('type')}\n"
+            f"Description: {activity.get('description')}\n"
+        )
+        prompt += f"\n{activity_details}"
+
+    
+
+    return prompt
+
+
+
+
+def get_itinerary(prompt):
+    model = "gpt-4o"  # Ensure the correct model name is used
+
+    messages = [
+        {"role": "system", "content": "You are an expert travel assistant."},
+        {
+            "role": "user",
+            "content": f"""Based on the following prompt, create a detailed travel itinerary that includes a day-by-day schedule, with selected activities, and suggested accommodations for the destination:
+            
+            {prompt}
+            
+            Format the response in JSON with the following structure:
+            {{
+                "itinerary": [
+                    {{
+                        "day": "Day 1",
+                        "activities": [
+                            {{"time": "9:00 AM", "activity": "Visit a local attraction"}}, 
+                            {{"time": "12:00 PM", "activity": "Lunch at a recommended restaurant"}}
+                        ],
+                        "accommodation": "Suggested accommodation for the night"
+                    }},
+                    // Continue for each day of the trip, adding activities and accommodations as needed
+                ]
+            }}
+            """
+        }
+    ]
+
+    request_body = {
+        "model": model,
+        "messages": messages,
+        "max_tokens": 2000
+    }
+
+    url = "https://api.openai.com/v1/chat/completions"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {openai.api_key}"  # Ensure your API key is configured
+    }
+
+    response = requests.post(url, headers=headers, json=request_body)
+
+    if response.status_code == 200:
+        response_data = response.json()
+        itinerary_content = response_data["choices"][0]["message"]["content"]
+        return itinerary_content
+    else:
+        flash(f"Error fetching itinerary: {response.text}", "error")
+        return None

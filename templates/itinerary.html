@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Itinerary</title>
+</head>
+<body>
+    <h1>Your Custom Itinerary</h1>
+
+    {% if itinerary %}
+        <div>
+            <pre>{{ itinerary }}</pre>
+        </div>
+    {% else %}
+        <p>No itinerary available. Please select activities and submit.</p>
+    {% endif %}
+
+    <a href="{{ url_for('activities') }}">Go back to activities</a>
+</body>
+</html>

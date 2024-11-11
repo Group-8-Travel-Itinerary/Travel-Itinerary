@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 import requests
 import yaml
-from integrations import concat_preferences_for_activities, get_activities, get_activity_details, get_photo_url, send_quiz_to_gpt, pexels_images, get_custom_quiz, flights_api, text_search_activities, weather_api
+from integrations import concat_preferences_for_activities, form_itinerary_prompt, get_activities, get_activity_details, get_itinerary, get_photo_url, load_gpt_instructions, send_quiz_to_gpt, pexels_images, get_custom_quiz, flights_api, text_search_activities, weather_api
 import os
 import logging
 
@@ -105,26 +105,52 @@ def quiz():
     # Otherwise, load a basic quiz template or default quiz data
     return render_template('quiz.html')
 
-@app.route('/itenary', methods=['GET', 'POST'])
-def itenary():
+@app.route('/itinerary', methods=['GET', 'POST'])
+def itinerary():
     if request.method == 'POST':
-        # Get the destination input
-        destination = ''
+       
         
+        # Get list of selected activity IDs from the form
+        selected_activities = request.form.getlist('selected_activities')
+        # Convert selected activity IDs from string to integers
+        selected_activity_ids = [int(activity_id) for activity_id in selected_activities]
+        
+        # Retrieve the activities from session
+        activities_data = session.get('activities', {}).get('activities', [])
+
+        # Filter the activities based on selected IDs
+        itinerary_activities = [activities_data[activity_id] for activity_id in selected_activity_ids]
+
+        #formulate prompt for itineray using all session data and activities selected
+        OptionalCustomQuiz = session.get('custom_quiz')
+        if OptionalCustomQuiz is None:
+         quiz_instructions = load_gpt_instructions('gpt_instructions/quiz_instructions.txt')
+        else:
+         quiz_instructions = OptionalCustomQuiz
+        
+        formatted_answers = session['formatted_answers']
+        destination = session['destination']
+
+        prompt = form_itinerary_prompt(destination, formatted_answers, quiz_instructions, itinerary_activities)
+
+
+
+        itinerary = get_itinerary(prompt)
+
         # Call the Pexels API function to get images
-        images = pexels_images(destination)
+        #images = pexels_images(destination)
         
         # Call the Flights API function to get flight information
-        flights = flights_api()
+        #flights = flights_api()
         # WIP: Awaiting implementation of the flights_api function
         
         # Call the Weather API function to get weather information
-        weather = weather_api(destination)
+        #weather = weather_api(destination)
         # WIP: Awaiting implementation of the weather_api function
         
         # Combine the data and render a new template
-        return render_template('itenary.html', images=images, flights=flights, weather=weather)
-    
+        #return render_template('itinerary.html', images=images, flights=flights, weather=weather)
+        return render_template('itinerary.html', itinerary=itinerary)
     return redirect(url_for('index', info='Please enter a destination to view your itenary.'))
 
 
@@ -142,15 +168,25 @@ def activities():
         activities_data = get_activities(selected_destination, prompt)
         session['activities'] = activities_data  # Store this in session for later access
 
+        # Initialize detailed_activities_map as an empty dictionary
+        detailed_activities_map = {}
+
         # Render the activities page with basic information
-        return render_template('activities.html', destination=selected_destination, activities=activities_data['activities'])
+        return render_template(
+            'activities.html', 
+            destination=selected_destination, 
+            activities=activities_data['activities'], 
+            detailed_activities_map=detailed_activities_map
+        )
 
     elif request.method == 'GET':
         # Handle GET request when requesting more information about a specific activity
         activity_id = request.args.get('activity_id')
         destination = session.get('destination')
         activities_data = session.get('activities', {}).get('activities', [])
-        detailed_activity = None
+        
+        # Initialize detailed_activities_map as an empty dictionary
+        detailed_activities_map = {}
 
         if activity_id:
             # Find the specific activity by ID
@@ -162,14 +198,13 @@ def activities():
                 activity_name = selected_activity['name']
                 search_results = text_search_activities(activity_name, places_api_key)
 
-                if search_results['results']:
-                    # Use the first result from text search for details
-                    result = search_results['results'][0]
+                # Gather multiple detailed options for the activity
+                detailed_options = []
+                for result in search_results['results']:
                     place_id = result['place_id']
-
-                    # Fetch additional details with `get_activity_details` using `place_id`
                     detailed_info = get_activity_details(place_id, places_api_key)
-                    detailed_activity = {
+
+                    detailed_options.append({
                         "name": selected_activity["name"],
                         "type": selected_activity["type"],
                         "description": selected_activity["description"],
@@ -178,11 +213,17 @@ def activities():
                         "total_ratings": result.get("user_ratings_total", "No rating count"),
                         "photo_url": get_photo_url(result.get("photos", [{}])[0].get("photo_reference"), places_api_key),
                         "website": detailed_info.get("result", {}).get("website", "Website not available")
-                    }
+                    })
 
-        # Render the template with detailed activity information if available
-        return render_template('activities.html', destination=destination, activities=activities_data, detailed_activity=detailed_activity)
+                # Store the detailed options in a map with activity_id as the key
+                detailed_activities_map[activity_id] = detailed_options
 
+        return render_template(
+            'activities.html', 
+            destination=destination, 
+            activities=activities_data, 
+            detailed_activities_map=detailed_activities_map
+        )
 
 #sort out later for testing here now 
 credentials = yaml.load(open('config.yaml'), Loader=yaml.FullLoader)

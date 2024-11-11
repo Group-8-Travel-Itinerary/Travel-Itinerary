@@ -2,7 +2,10 @@
 # Imports the necessary modules and libraries
 from flask import Flask, render_template, request, url_for, flash, redirect, session
 from datetime import datetime, timedelta
-from integrations import concat_preferences_for_activities, get_activities, send_quiz_to_gpt, pexels_images, get_custom_quiz, flights_api, weather_api
+
+import requests
+import yaml
+from integrations import concat_preferences_for_activities, get_activities, get_activity_details, get_photo_url, send_quiz_to_gpt, pexels_images, get_custom_quiz, flights_api, text_search_activities, weather_api
 import os
 import logging
 
@@ -13,6 +16,7 @@ logging.basicConfig(level=logging.INFO)
 # Creates a Flask app
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -47,6 +51,9 @@ def index():
 
     # For a GET request, just render the index page without any quiz
     return render_template('index.html')
+
+
+
 
 # Route for the quiz page
 @app.route('/quiz', methods=['GET', 'POST'])
@@ -136,6 +143,48 @@ def activities():
     # Render the activities page with error handling
     return render_template('activities.html', destination=selected_destination, activities=activities_data)
 
+#sort out later for testing here now 
+credentials = yaml.load(open('config.yaml'), Loader=yaml.FullLoader)
+places_api_key = credentials['places']['api_key']
+
+
+@app.route('/activityDetails')
+def activitiesDetails():
+    search_results = text_search_activities("honolulu snorkeling", places_api_key)
+    activity_list = []
+
+    for result in search_results['results']:
+        # Extracting data directly from the text search result
+        name = result.get("name", "No name available")
+        address = result.get("formatted_address", "No address available")
+        rating = result.get("rating", "No rating available")
+        total_ratings = result.get("user_ratings_total", "No rating count")
+        place_id = result['place_id']
+        
+        detailed_info = get_activity_details(place_id, places_api_key)
+        #ensure that if not avalible this is handled in view.
+        website = detailed_info.get("result", {}).get("website", "Website not available")
+         
+        # Get photo URL if available
+        photos = result.get("photos", [])
+        if photos:
+            photo_url = get_photo_url(photos[0]["photo_reference"], places_api_key)
+        else:
+            photo_url = "No photo available"
+
+        # Add data to list
+        activity_list.append({
+            "name": name,
+            "address": address,
+            "rating": rating,
+            "total_ratings": total_ratings,
+            "website": website,
+            "photo_url": photo_url
+        })
+
+    # Pass activity data to the template
+    return render_template("activityDetails.html", activities=activity_list)
+
 # Run the Flask app
 if __name__ == '__main__':
     app.run(debug=True)
@@ -143,5 +192,4 @@ if __name__ == '__main__':
 
 
 
-    # Print activities in JSON format using method 
-#print(json.dumps(get_activities(destination, preferences), indent=4))
+

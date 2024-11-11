@@ -153,6 +153,9 @@ def itinerary():
         return render_template('itinerary.html', itinerary=itinerary)
     return redirect(url_for('index', info='Please enter a destination to view your itenary.'))
 
+#sort out later for testing here now 
+credentials = yaml.load(open('config.yaml'), Loader=yaml.FullLoader)
+places_api_key = credentials['places']['api_key']
 
 @app.route('/activities', methods=['GET', 'POST'])
 def activities():
@@ -225,53 +228,9 @@ def activities():
             detailed_activities_map=detailed_activities_map
         )
 
-#sort out later for testing here now 
-credentials = yaml.load(open('config.yaml'), Loader=yaml.FullLoader)
-places_api_key = credentials['places']['api_key']
 
 
-@app.route('/activityDetails')
-def activitiesDetails():
-    search_results = text_search_activities("honolulu snorkeling", places_api_key)
-    activity_list = []
-    activity_id = 0
-    for result in search_results['results']:
-        # Extracting data directly from the text search result
-        name = result.get("name", "No name available")
-        address = result.get("formatted_address", "No address available")
-        rating = result.get("rating", "No rating available")
-        total_ratings = result.get("user_ratings_total", "No rating count")
-        place_id = result['place_id']
-        activity_id = activity_id + 1
-        
-        detailed_info = get_activity_details(place_id, places_api_key)
-        #ensure that if not avalible this is handled in view.
-        website = detailed_info.get("result", {}).get("website", "Website not available")
-         
-        # Get photo URL if available
-        photos = result.get("photos", [])
-        if photos:
-            photo_url = get_photo_url(photos[0]["photo_reference"], places_api_key)
-        else:
-            photo_url = "No photo available"
 
-        # Add data to list
-        activity_list.append({
-            "name": name,
-            "address": address,
-            "rating": rating,
-            "total_ratings": total_ratings,
-            "website": website,
-            "photo_url": photo_url,
-            "activity_id": activity_id
-        })
-
-    # Pass activity data to the template
-    return render_template("activityDetails.html", activities=activity_list)
-
-@app.route('/destinations')
-def destinations():
-    return render_template('destinations.html')
 
 # Run the Flask app
 if __name__ == '__main__':

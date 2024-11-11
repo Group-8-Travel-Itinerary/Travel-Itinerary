@@ -18,11 +18,6 @@ openai.api_key = credentials['openai']['api_key']
 weather_api_key = credentials['weather']['api_key']
 flight_api_key = credentials['flight']['api_key']
 
-# Function to get the data from the Google Places API
-def google_places():
-    return "WIP"
-
-
 
 
 # Function for sending quiz answers to GPT API
@@ -374,6 +369,8 @@ def pexels_images(query, per_page=10):
 #print(flights_api("Glasgow", cities, start_date, end_date))
 
 
+
+
 def get_activities(destination, preferences):
     # Define the prompt for OpenAI to generate activities
     prompt = f"""
@@ -387,11 +384,11 @@ def get_activities(destination, preferences):
             {{
                 "name": "Activity name here",
                 "type": "Type (e.g., adventure, relaxation, cultural)",
-                "description": "Brief description of the activity"
+                "description": "an excellent description of the activity"
             }}
         ]
     }}
-    Only include activities that directly match the user's preferences.
+    Only include activities that directly match the user's preferences but make sure there are significantly more activities suggested than found in the preferences.
     """
 
     # Create the request body
@@ -401,7 +398,7 @@ def get_activities(destination, preferences):
             {"role": "system", "content": "You are a knowledgeable travel assistant."},
             {"role": "user", "content": prompt}
         ],
-        "max_tokens": 500
+        "max_tokens": 1000
     }
 
     # Serialize the request body to JSON
@@ -428,6 +425,7 @@ def get_activities(destination, preferences):
         # Process and parse the successful response
         response_data = response.json()
         content = response_data["choices"][0]["message"]["content"]
+        print("Raw content received:", content)
 
         # Clean up the content if needed and parse it as JSON
         if content.startswith("```json"):
@@ -471,4 +469,41 @@ def concat_preferences_for_activities():
 
     # Return the prompt for use with OpenAI
     return activities_prompt
+
+
+#set location and radius from getting chat gpt to output it when getting activities!!! this can reduce costs for api calls to google places 
+def text_search_activities(query, api_key, location=None, radius=None):
+    url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+    params = {
+        'query': query,
+        'key': api_key,
+        'fields': 'place_id,name,photos,formatted_address,rating,user_ratings_total'
+    }
+    if location:
+        params['location'] = location
+    if radius:
+        params['radius'] = radius
+    
+    response = requests.get(url, params=params)
+    return response.json()
+
+#fixed above method making the below method obsolete to prevent extra costs
+def get_activity_details(place_id, api_key):
+    url = f"https://maps.googleapis.com/maps/api/place/details/json"
+    params = {
+        'place_id': place_id,
+        'key': api_key,
+        'fields': 'website'
+    }
+    response = requests.get(url, params=params)
+    return response.json()
+
+
+
+
+
+def get_photo_url(photo_reference, api_key, max_width=400):
+    return f"https://maps.googleapis.com/maps/api/place/photo?maxwidth={max_width}&photoreference={photo_reference}&key={api_key}"
+
+
 

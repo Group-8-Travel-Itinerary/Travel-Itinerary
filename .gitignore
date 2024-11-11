@@ -104,3 +104,4 @@ logs/
 *.coverage
 # Ignore YAML files
 *.yaml
+*.yaml

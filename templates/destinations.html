@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Destinations - Travel Itinerary{% endblock %}
+
+{% block content %}
+<div class="container text-center my-4">
+    <h1 class="mb-4">Choose your destination</h1>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+
+        <!-- Destination Card 1 -->
+        <div class="col">
+            <div class="card h-100">
+                <img src="/static/Qatar-Opens-1.jpg" class="card-img-top" alt="Destination 1">
+                <div class="card-body">
+                    <h5 class="card-title">Option #1</h5>
+                    <p class="card-text">Discover the beauty and culture of Destination 1. Enjoy activities, dining, and sightseeing!</p>
+                    <a href="#" class="custom-btn">Option #1</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Destination Card 2 -->
+        <div class="col">
+            <div class="card h-100">
+                <img src="/static/Qatar-Opens-1.jpg" class="card-img-top" alt="Destination 2">
+                <div class="card-body">
+                    <h5 class="card-title">Option #2</h5>
+                    <p class="card-text">Experience the adventure of Destination 2. Perfect for nature lovers and thrill seekers!</p>
+                    <a href="#" class="custom-btn">Option #2</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Destination Card 3 -->
+        <div class="col">
+            <div class="card h-100">
+                <img src="/static/Qatar-Opens-1.jpg" class="card-img-top" alt="Destination 3">
+                <div class="card-body">
+                    <h5 class="card-title">Option #3</h5>
+                    <p class="card-text">Relax and unwind at Destination 3. Enjoy beautiful beaches and a vibrant nightlife!</p>
+                    <a href="#" class="custom-btn">Option #3</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

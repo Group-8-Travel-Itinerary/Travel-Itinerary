@@ -136,6 +136,10 @@ def activities():
     # Render the activities page with error handling
     return render_template('activities.html', destination=selected_destination, activities=activities_data)
 
+@app.route('/destinations')
+def destinations():
+    return render_template('destinations.html')
+
 # Run the Flask app
 if __name__ == '__main__':
     app.run(debug=True)

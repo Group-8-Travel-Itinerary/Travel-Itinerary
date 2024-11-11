@@ -130,3 +130,18 @@ footer {
 .input-group .btn:hover {
     background-color: #2a9cd8 !important; /* Slightly darker shade on hover */
 }
+
+/* Custom Button Styling */
+.custom-btn {
+    padding: 10px 15px;
+    background-color: #38b6ff !important; /* Custom color */
+    color: white !important; /* Text color */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none; /* Remove underline */
+}
+
+.custom-btn:hover {
+    background-color: #2a9cd8 !important; /* Slightly darker shade on hover */
+}

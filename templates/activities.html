@@ -8,14 +8,29 @@
 <body>
     <h1>Activities for {{ destination }}</h1>
     <div>
-        {% if activities.error %}
-            <p>{{ activities.error }}</p>
-        {% else %}
+        {% if activities %}
             <ul>
-                {% for activity in activities.activities %}
-                    <li><strong>{{ activity.name }}</strong>: {{ activity.description }} (Type: {{ activity.type }})</li>
+                {% for activity in activities %}
+                    <li>
+                        <h2>{{ activity.name }}</h2>
+                        <p><strong>Type:</strong> {{ activity.type }}</p>
+                        <p><strong>Description:</strong> {{ activity.description }}</p>
+                        <!-- Link for More Info -->
+                        <a href="{{ url_for('activities', activity_id=loop.index0) }}">More Info</a>
+                    </li>
                 {% endfor %}
             </ul>
+        {% endif %}
+
+        {% if detailed_activity %}
+            <h2>More Information for {{ detailed_activity.name }}</h2>
+            <p><strong>Type:</strong> {{ detailed_activity.type }}</p>
+            <p><strong>Description:</strong> {{ detailed_activity.description }}</p>
+            <p><strong>Address:</strong> {{ detailed_activity.address }}</p>
+            <p><strong>Rating:</strong> {{ detailed_activity.rating }} ({{ detailed_activity.total_ratings }} reviews)</p>
+            <img src="{{ detailed_activity.photo_url }}" alt="Detailed Activity Image" style="width:300px; height:auto;">
+            <br>
+            <a href="{{ detailed_activity.website }}" target="_blank">Visit Website</a>
         {% endif %}
     </div>
     <a href="{{ url_for('index') }}">Go back to home</a>

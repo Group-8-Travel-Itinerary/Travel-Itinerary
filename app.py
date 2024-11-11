@@ -128,20 +128,61 @@ def itenary():
     return redirect(url_for('index', info='Please enter a destination to view your itenary.'))
 
 
-@app.route('/activities', methods=['POST'])
+@app.route('/activities', methods=['GET', 'POST'])
 def activities():
-    selected_destination = request.form.get('selected_destination')
-    session['destination'] = selected_destination
-    
-    # Retrieve the prompt based on session data
-    prompt = concat_preferences_for_activities()
+    if request.method == 'POST':
+        # Handle POST request for selecting a destination
+        selected_destination = request.form.get('selected_destination')
+        session['destination'] = selected_destination
 
-    # Get activities based on the selected destination and prompt
-    activities_data = get_activities(selected_destination, prompt)
-    logging.info(f"Activities: {activities_data}")
+        # Retrieve the prompt based on session data
+        prompt = concat_preferences_for_activities()
 
-    # Render the activities page with error handling
-    return render_template('activities.html', destination=selected_destination, activities=activities_data)
+        # Get basic activity information (name, type, description) from get_activities
+        activities_data = get_activities(selected_destination, prompt)
+        session['activities'] = activities_data  # Store this in session for later access
+
+        # Render the activities page with basic information
+        return render_template('activities.html', destination=selected_destination, activities=activities_data['activities'])
+
+    elif request.method == 'GET':
+        # Handle GET request when requesting more information about a specific activity
+        activity_id = request.args.get('activity_id')
+        destination = session.get('destination')
+        activities_data = session.get('activities', {}).get('activities', [])
+        detailed_activity = None
+
+        if activity_id:
+            # Find the specific activity by ID
+            activity_id = int(activity_id)
+            selected_activity = activities_data[activity_id] if activity_id < len(activities_data) else None
+
+            if selected_activity:
+                # Perform a search for the specific activity name
+                activity_name = selected_activity['name']
+                search_results = text_search_activities(activity_name, places_api_key)
+
+                if search_results['results']:
+                    # Use the first result from text search for details
+                    result = search_results['results'][0]
+                    place_id = result['place_id']
+
+                    # Fetch additional details with `get_activity_details` using `place_id`
+                    detailed_info = get_activity_details(place_id, places_api_key)
+                    detailed_activity = {
+                        "name": selected_activity["name"],
+                        "type": selected_activity["type"],
+                        "description": selected_activity["description"],
+                        "address": result.get("formatted_address", "No address available"),
+                        "rating": result.get("rating", "No rating available"),
+                        "total_ratings": result.get("user_ratings_total", "No rating count"),
+                        "photo_url": get_photo_url(result.get("photos", [{}])[0].get("photo_reference"), places_api_key),
+                        "website": detailed_info.get("result", {}).get("website", "Website not available")
+                    }
+
+        # Render the template with detailed activity information if available
+        return render_template('activities.html', destination=destination, activities=activities_data, detailed_activity=detailed_activity)
+
 
 #sort out later for testing here now 
 credentials = yaml.load(open('config.yaml'), Loader=yaml.FullLoader)
@@ -152,7 +193,7 @@ places_api_key = credentials['places']['api_key']
 def activitiesDetails():
     search_results = text_search_activities("honolulu snorkeling", places_api_key)
     activity_list = []
-
+    activity_id = 0
     for result in search_results['results']:
         # Extracting data directly from the text search result
         name = result.get("name", "No name available")
@@ -160,6 +201,7 @@ def activitiesDetails():
         rating = result.get("rating", "No rating available")
         total_ratings = result.get("user_ratings_total", "No rating count")
         place_id = result['place_id']
+        activity_id = activity_id + 1
         
         detailed_info = get_activity_details(place_id, places_api_key)
         #ensure that if not avalible this is handled in view.
@@ -179,7 +221,8 @@ def activitiesDetails():
             "rating": rating,
             "total_ratings": total_ratings,
             "website": website,
-            "photo_url": photo_url
+            "photo_url": photo_url,
+            "activity_id": activity_id
         })
 
     # Pass activity data to the template

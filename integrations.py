@@ -6,8 +6,7 @@ import json
 import openai
 import yaml
 from datetime import datetime, timedelta
-from flask import session  
-from flask import flash
+from flask import session, flash, request
 
 
 
@@ -170,13 +169,13 @@ def load_gpt_instructions(file_path):
     return file.read()
 
 # Function to get data from a flights API to give an idea of the prices
-def flights_api(base_city, cities, start_date, end_date):
+def flights_api(request_city, cities, start_date, end_date):
     flight_data = {}
     
     for city in cities:
         # Get FreebaseID for the city
         freebase_id = get_freebase_id(city)
-        base_freebase_id = get_freebase_id(base_city)
+        base_freebase_id = get_freebase_id(request_city)
         
         # Flight API URL with parameters
         url = f"https://serpapi.com/search.json?engine=google_flights&departure_id={base_freebase_id}&arrival_id={freebase_id}&outbound_date={start_date}&return_date={end_date}&currency=GBP&api_key={flight_api_key}&hl=en"

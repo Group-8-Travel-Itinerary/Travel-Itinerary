@@ -358,10 +358,10 @@ def pexels_images(query, per_page=10):
         
         return image_urls
 
-#not sure why this is here   
+#not sure why this is here - Testing
 #print(weather_api(["New York", "Los Angeles", "Chicago"]))
 
-#not sure why this is here 
+#not sure why this is here - Testing
 #cities = ["New York", "Los Angeles", "Chicago"]
 #start_date = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
 #end_date = (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')

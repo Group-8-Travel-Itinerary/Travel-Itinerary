@@ -8,6 +8,7 @@ import yaml
 from integrations import concat_preferences_for_activities, form_itinerary_prompt, get_activities, get_activity_details, get_itinerary, get_photo_url, load_gpt_instructions, send_quiz_to_gpt, pexels_images, get_custom_quiz, flights_api, text_search_activities, weather_api
 import os
 import logging
+import json
 
 
 # Set up logging
@@ -24,15 +25,7 @@ def index():
         # Get the destination input from the form
         initial_prompt = request.form.get('destinationInput')
 
-        if initial_prompt:
-            
-            #move this flights stuff to itinerary later on
-            #base_city = session.get('base_city')
-            #destination = ["New York", "Los Angeles", "Chicago"]
-            #start_date = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
-            #end_date = (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
-            #print(flights_api(base_city, destination, start_date, end_date))
-            
+        if initial_prompt:          
             breakpoint()
             # Call get_custom_quiz with error handling
             custom_quiz = get_custom_quiz(initial_prompt)
@@ -138,14 +131,14 @@ def itinerary():
         itinerary = get_itinerary(prompt)
 
         # Call the Pexels API function to get images
-        #images = pexels_images(destination)
+        images = pexels_images(destination)
         
         # Call the Flights API function to get flight information
-        #flights = flights_api()
+        flights = flights_api()
         # WIP: Awaiting implementation of the flights_api function
         
         # Call the Weather API function to get weather information
-        #weather = weather_api(destination)
+        weather = weather_api(destination)
         # WIP: Awaiting implementation of the weather_api function
         
         # Combine the data and render a new template
@@ -227,6 +220,23 @@ def activities():
             activities=activities_data, 
             detailed_activities_map=detailed_activities_map
         )
+        
+        
+
+def get_user_location():
+    # Make a request to get the user's IP address
+    response = requests.get('https://httpbin.org/ip')
+    # Parse the JSON response and get the user's IP address
+    user_ip = response.json()['origin']
+    url = f'http://ip-api.com/json/{user_ip}'
+    # Create a request to the URL
+    response = requests.get(url)
+    # Parse the JSON response
+    json_data = response.json()
+    # Find the city in the response
+    city = json_data.get('city')
+    # Store the city in the session
+    session['city'] = city
 
 
 

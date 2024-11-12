@@ -1,5 +1,7 @@
 # Description: This file contains the code for the Flask app that will be used to run the web application.
 # Imports the necessary modules and libraries
+import json
+from pathlib import Path
 from flask import Flask, render_template, request, url_for, flash, redirect, session
 from datetime import datetime, timedelta
 
@@ -76,7 +78,7 @@ def quiz():
         # Combine user answers into a single message or format as needed
         formatted_answers = ', '.join(user_answers)
         session['formatted_answers'] = formatted_answers
-
+        
         # Call the method to send quiz answers to GPT
         gpt_response = send_quiz_to_gpt(formatted_answers)
 
@@ -99,11 +101,18 @@ def quiz():
     custom_quiz = session.get('custom_quiz')
     
     if custom_quiz:
+        print("Custom Quiz from session:", session.get('custom_quiz'))
+
         # If there is a custom quiz in the session, render it
         return render_template('quiz.html', quiz=custom_quiz)
     
-    # Otherwise, load a basic quiz template or default quiz data
-    return render_template('quiz.html')
+    # Otherwise, load hard-coded quiz data from a JSON file
+    # This won't work if the custom quiz already exists in the session
+    quiz_data_file = Path('static/data/quiz_data.json')
+    if quiz_data_file.exists():
+        with open(quiz_data_file, 'r') as f:
+            default_quiz = json.load(f)
+    return render_template('quiz.html', quiz= default_quiz)
 
 @app.route('/itinerary', methods=['GET', 'POST'])
 def itinerary():
@@ -132,8 +141,6 @@ def itinerary():
         destination = session['destination']
 
         prompt = form_itinerary_prompt(destination, formatted_answers, quiz_instructions, itinerary_activities)
-
-
 
         itinerary = get_itinerary(prompt)
 
@@ -235,8 +242,3 @@ def activities():
 # Run the Flask app
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-
-
-

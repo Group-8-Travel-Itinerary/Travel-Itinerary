@@ -1,0 +1,45 @@
+ /* Step Indicator Styling */
+ .step-indicator {
+    position: relative;
+    padding: 10px 0;
+    /* border-bottom: 2px solid #38b6ff; */
+}
+
+.step {
+    text-align: center;
+    flex: 1;
+    position: relative;
+}
+
+.icon-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #23a2b7;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin: 0 auto;
+}
+
+.step-number {
+    margin-top: 5px;
+    font-size: 14px;
+    color: #333;
+}
+
+.step.active .icon-circle {
+    background-color: #ffd700;
+}
+
+.step.completed .icon-circle {
+    background-color: #38b6ff;
+}
+
+/* Question Card Styling */
+.question-card {
+    margin-top: 20px;
+}
+

@@ -1,119 +1,145 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Travel Quiz</title>
-</head>
-<body>
-    <h1>Travel Personality Quiz</h1>
-    <form method="POST" action="{{ url_for('quiz') }}">
-        <h2>1. What excites you the most about traveling?</h2>
-        <input type="radio" id="question1a" name="answer1" value="A">
-        <label for="question1a">A. Immersing in new cultures and history.</label><br>
-        <input type="radio" id="question1b" name="answer1" value="B">
-        <label for="question1b">B. Seeking adventure and adrenaline-pumping activities.</label><br>
-        <input type="radio" id="question1c" name="answer1" value="C">
-        <label for="question1c">C. Relaxing on a beach with a good book.</label><br>
-        <input type="radio" id="question1d" name="answer1" value="D">
-        <label for="question1d">D. Exploring nature and beautiful landscapes.</label><br>
-        <input type="radio" id="question1e" name="answer1" value="E">
-        <label for="question1e">E. Experiencing bustling cities and vibrant nightlife.</label><br>
+{% extends "base.html" %}
+{% block title %}Travel Itinerary Quiz{% endblock %}
 
-        <h2>2. What’s your ideal accommodation type?</h2>
-        <input type="radio" id="question2a" name="answer2" value="A">
-        <label for="question2a">A. A cozy boutique hotel in the heart of the city.</label><br>
-        <input type="radio" id="question2b" name="answer2" value="B">
-        <label for="question2b">B. A rustic cabin or a tent in the wilderness.</label><br>
-        <input type="radio" id="question2c" name="answer2" value="C">
-        <label for="question2c">C. A luxury resort with all-inclusive services.</label><br>
-        <input type="radio" id="question2d" name="answer2" value="D">
-        <label for="question2d">D. A budget-friendly hostel or guesthouse.</label><br>
-        <input type="radio" id="question2e" name="answer2" value="E">
-        <label for="question2e">E. Staying with locals for an authentic experience (e.g., homestays or Airbnbs).</label><br>
+{% block extra_styles %}
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 
-        <h2>3. Which of these activities would you prefer on your trip?</h2>
-        <input type="radio" id="question3a" name="answer3" value="A">
-        <label for="question3a">A. Hiking, kayaking, or mountain climbing.</label><br>
-        <input type="radio" id="question3b" name="answer3" value="B">
-        <label for="question3b">B. Visiting museums, art galleries, and historical sites.</label><br>
-        <input type="radio" id="question3c" name="answer3" value="C">
-        <label for="question3c">C. Trying local foods and attending food markets.</label><br>
-        <input type="radio" id="question3d" name="answer3" value="D">
-        <label for="question3d">D. Relaxing at a spa or lounging on the beach.</label><br>
-        <input type="radio" id="question3e" name="answer3" value="E">
-        <label for="question3e">E. Exploring local nightlife or shopping in trendy areas.</label><br>
+<link href="/static/css/quiz.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+{% endblock %}
 
-        <h2>4. How important are physical activities during your travels?</h2>
-        <input type="radio" id="question4a" name="answer4" value="A">
-        <label for="question4a">A. I need a lot of outdoor activities to stay active.</label><br>
-        <input type="radio" id="question4b" name="answer4" value="B">
-        <label for="question4b">B. I prefer a mix of light activities and sightseeing.</label><br>
-        <input type="radio" id="question4c" name="answer4" value="C">
-        <label for="question4c">C. Physical activity isn’t a priority; I’d rather explore at a slow pace.</label><br>
+{% block content %}
+<h1>{{ quiz.quiz_title }}</h1>
+<div class="container mt-4">
+    
+    <!-- Question and Answer Section -->
+    <div class="row justify-content-center">
+        <div class="col-md-12">
+            <form id="quiz-form" method="POST" action="/quiz">
+                <div class="card question-card">
+                    <div class="card-header">
+                        <!-- Step Indicator Section-->
+     <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="step-indicator d-flex flex-wrap justify-content-between" aria-hidden="true">
+                <!-- Steps 1-10 -->
+                <div class="step">
+                    <div class="icon-circle">
+                        <i class="fas fa-plane"></i>
+                    </div>
+                    <span class="step-number">1</span>
+                </div>
+                <div class="step">
+                    <div class="icon-circle">
+                        <i class="fas fa-suitcase"></i>
+                    </div>
+                    <span class="step-number">2</span>
+                </div>
+                <div class="step">
+                    <div class="icon-circle">
+                        <i class="fas fa-map"></i>
+                    </div>
+                    <span class="step-number">3</span>
+                </div>
+                <div class="step">
+                    <div class="icon-circle">
+                        <i class="fas fa-umbrella-beach"></i>
+                    </div>
+                    <span class="step-number">4</span>
+                </div>
+                <div class="step">
+                    <div class="icon-circle">
+                        <i class="fas fa-hiking"></i>
+                    </div>
+                    <span class="step-number">5</span>
+                </div>
+                <div class="step">
+                    <div class="icon-circle">
+                        <i class="fas fa-tree"></i>
+                    </div>
+                    <span class="step-number">6</span>
+                </div>
+                <div class="step">
+                    <div class="icon-circle">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <span class="step-number">7</span>
+                </div>
+                <div class="step">
+                    <div class="icon-circle">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <span class="step-number">8</span>
+                </div>
+                <div class="step">
+                    <div class="icon-circle">
+                        <i class="fas fa-sun"></i>
+                    </div>
+                    <span class="step-number">9</span>
+                </div>
+                <div class="step">
+                    <div class="icon-circle">
+                        <i class="fas fa-mountain"></i>
+                    </div>
+                    <span class="step-number">10</span>
+                </div>
+            </div>
+        </div>
+    </div>
+                    </div>
+                    <div class="card-body">
+                        <h1 class="card-title" id="question-text">Question will appear here</h1>
+                        <div class="list-group" id="answers">
+                            <!-- Answers will be inserted here -->
+                        </div>
+                        <!-- Hidden Answers To Submit to Backend -->
+                        <input type="hidden" name="answer1" id="answer1">
+                        <input type="hidden" name="answer2" id="answer2">
+                        <input type="hidden" name="answer3" id="answer3">
+                        <input type="hidden" name="answer4" id="answer4">
+                        <input type="hidden" name="answer5" id="answer5">
+                        <input type="hidden" name="answer6" id="answer6">
+                        <input type="hidden" name="answer7" id="answer7">
+                        <input type="hidden" name="answer8" id="answer8">
+                        <input type="hidden" name="answer9" id="answer9">
+                        <input type="hidden" name="answer10" id="answer10">
+                    </div>
+                 
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
-        <h2>5. Who do you typically travel with?</h2>
-        <input type="radio" id="question5a" name="answer5" value="A">
-        <label for="question5a">A. I prefer traveling solo.</label><br>
-        <input type="radio" id="question5b" name="answer5" value="B">
-        <label for="question5b">B. With a group of friends.</label><br>
-        <input type="radio" id="question5c" name="answer5" value="C">
-        <label for="question5c">C. My family, including kids.</label><br>
-        <input type="radio" id="question5d" name="answer5" value="D">
-        <label for="question5d">D. My partner or significant other.</label><br>
-        <input type="radio" id="question5e" name="answer5" value="E">
-        <label for="question5e">E. I love meeting new people during group tours.</label><br>
+{% endblock %}
 
-        <h2>6. Do you prefer traveling in a quiet, less crowded environment, or do you enjoy busy, lively destinations?</h2>
-        <input type="radio" id="question6a" name="answer6" value="A">
-        <label for="question6a">A. I love exploring popular tourist hotspots.</label><br>
-        <input type="radio" id="question6b" name="answer6" value="B">
-        <label for="question6b">B. I prefer quieter, off-the-beaten-path destinations.</label><br>
-        <input type="radio" id="question6c" name="answer6" value="C">
-        <label for="question6c">C. I enjoy a good balance of both.</label><br>
+{% block extra_scripts %}
+<!-- Bootstrap Dependencies -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.6/dist/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.2.1/dist/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
-        <h2>7. How much time do you typically have for a vacation?</h2>
-        <input type="radio" id="question7a" name="answer7" value="A">
-        <label for="question7a">A. Just a weekend or a short getaway (2-4 days).</label><br>
-        <input type="radio" id="question7b" name="answer7" value="B">
-        <label for="question7b">B. About a week.</label><br>
-        <input type="radio" id="question7c" name="answer7" value="C">
-        <label for="question7c">C. Two weeks or more.</label><br>
-        <input type="radio" id="question7d" name="answer7" value="D">
-        <label for="question7d">D. As long as I can get—I’m flexible.</label><br>
+<script>
+// Get rid of extra quotes and escape characters
+function cleanJSON(rawData) {
+    let cleanedData = rawData.trim();
 
-        <h2>8. What’s your typical travel budget?</h2>
-        <input type="radio" id="question8a" name="answer8" value="A">
-        <label for="question8a">A. I’m on a tight budget—looking for affordable options.</label><br>
-        <input type="radio" id="question8b" name="answer8" value="B">
-        <label for="question8b">B. I’m willing to spend a bit more for a great experience.</label><br>
-        <input type="radio" id="question8c" name="answer8" value="C">
-        <label for="question8c">C. I have no set budget—I want luxury and convenience.</label><br>
+    if (cleanedData.startsWith('"') && cleanedData.endsWith('"')) {
+        cleanedData = cleanedData.slice(1, -1);
+    }
 
-        <h2>9. What type of climate do you prefer for your trips?</h2>
-        <input type="radio" id="question9a" name="answer9" value="A">
-        <label for="question9a">A. Warm and sunny—perfect for beaches.</label><br>
-        <input type="radio" id="question9b" name="answer9" value="B">
-        <label for="question9b">B. Cool and crisp—ideal for nature hikes and exploring cities.</label><br>
-        <input type="radio" id="question9c" name="answer9" value="C">
-        <label for="question9c">C. Cold and snowy—I love winter activities.</label><br>
-        <input type="radio" id="question9d" name="answer9" value="D">
-        <label for="question9d">D. I’m flexible and enjoy all kinds of climates.</label><br>
+    cleanedData = cleanedData.replace(/\\"/g, '"'); 
+    cleanedData = cleanedData.replace(/\\n/g, '\\n');  
+    return cleanedData;
+}
 
-        <h2>10. Which kind of scenery do you find most appealing?</h2>
-        <input type="radio" id="question10a" name="answer10" value="A">
-        <label for="question10a">A. Pristine beaches and clear oceans.</label><br>
-        <input type="radio" id="question10b" name="answer10" value="B">
-        <label for="question10b">B. Mountains and forests with fresh air.</label><br>
-        <input type="radio" id="question10c" name="answer10" value="C">
-        <label for="question10c">C. A mix of modern skyscrapers and cultural landmarks.</label><br>
-        <input type="radio" id="question10d" name="answer10" value="D">
-        <label for="question10d">D. Historic villages, ancient ruins, and quaint towns.</label><br>
+// Initilise quiz data from json
+const rawDataQuiz = '{{ quiz | tojson | safe }}';
+const cleanedRawDataQuiz = cleanJSON(rawDataQuiz);
+const quizData = JSON.parse(cleanedRawDataQuiz);
 
-        <br>
-        <input type="submit" value="Submit">
-    </form>
+</script>
 
-   
-</body>
-</html>
+<script src="/static/js/quiz.js" defer></script>
+{% endblock %}

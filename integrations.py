@@ -118,7 +118,8 @@ def get_custom_quiz(prompt):
     {"role": "system", "content": "You are an expert travel assistant."},
     {
         "role": "user",
-        "content": f"""Create a personalized 10-question travel personality quiz for a user interested in: {prompt}. Format the response in JSON with the following structure:
+        "content": f"""Create a personalized 10-question travel personality quiz for a user interested in: {prompt}. **Do not use any markdown formatting or backticks**. 
+            Format the response strictly as valid JSON with the following structure (no extra characters, no backticks):
         {{
             "quiz_title": "Travel Personality Quiz",
             "questions": [

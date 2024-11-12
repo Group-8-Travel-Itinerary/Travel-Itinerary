@@ -224,17 +224,19 @@ def activities():
         
 
 def get_user_location():
-    # Get the user's location based on IP address using ip-api.com
-    url = f'http://ip-api.com/json/{request.remote_addr}'
+    # Make a request to get the user's IP address
+    response = requests.get('https://httpbin.org/ip')
+    # Parse the JSON response and get the user's IP address
+    user_ip = response.json()['origin']
+    url = f'http://ip-api.com/json/{user_ip}'
     # Create a request to the URL
     response = requests.get(url)
     # Parse the JSON response
     json_data = response.json()
     # Find the city in the response
-    city = json_data.get('city', 'Unknown')
+    city = json_data.get('city')
     # Store the city in the session
     session['city'] = city
-    print(city)
 
 
 

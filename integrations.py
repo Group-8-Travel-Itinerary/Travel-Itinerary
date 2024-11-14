@@ -170,64 +170,72 @@ def load_gpt_instructions(file_path):
     return file.read()
 
 # Function to get data from a flights API to give an idea of the prices
-def flights_api(request_city, cities, start_date, end_date):
+def flights_api(request_city, city, start_date, end_date):
+    # Initialise an empty dictionary to store the flight data
     flight_data = {}
     
-    for city in cities:
-        # Get FreebaseID for the city
-        freebase_id = get_freebase_id(city)
-        base_freebase_id = get_freebase_id(request_city)
+    # Get FreebaseID for the city
+    freebase_id = get_freebase_id(city)
+    base_freebase_id = get_freebase_id(request_city)
         
-        # Flight API URL with parameters
-        url = f"https://serpapi.com/search.json?engine=google_flights&departure_id={base_freebase_id}&arrival_id={freebase_id}&outbound_date={start_date}&return_date={end_date}&currency=GBP&api_key={flight_api_key}&hl=en"
-        
-        response = requests.get(url)
-        if response.status_code != 200:
-            error_content = response.text
-            flight_data[city] = {"error": f"Error: {response.status_code}", "message": error_content}
-            continue
-        
-        response_data = response.json()
-        
-        # Extracting useful information from the response
-        try:
-            best_flight = response_data['best_flights'][0]
-            flights = best_flight['flights']
-            layovers = best_flight.get('layovers', [])
-            total_duration = best_flight['total_duration']
-            carbon_emissions = best_flight['carbon_emissions']['this_flight']
-            price = best_flight['price']
-            airline_logo = best_flight['airline_logo']
-            
-            flight_info = {
-                "flights": [],
-                "layovers": layovers,
-                "total_duration": total_duration,
-                "carbon_emissions": carbon_emissions,
-                "price": price,
-                "airline_logo": airline_logo
-            }
-            
-            for flight in flights:
-                flight_info["flights"].append({
-                    "departure_airport": flight['departure_airport']['name'],
-                    "departure_time": flight['departure_airport']['time'],
-                    "arrival_airport": flight['arrival_airport']['name'],
-                    "arrival_time": flight['arrival_airport']['time'],
-                    "duration": flight['duration'],
-                    "airplane": flight['airplane'],
-                    "airline": flight['airline'],
-                    "airline_logo": flight['airline_logo'],
-                    "travel_class": flight['travel_class'],
-                    "flight_number": flight['flight_number'],
-                    "legroom": flight['legroom'],
-                    "extensions": flight['extensions']
-                })
-            
-            flight_data[city] = flight_info
-        except (IndexError, KeyError) as e:
-            flight_data[city] = {"error": "No flight data found", "details": str(e)}
+    # Flight API URL with parameters
+    url = f"https://serpapi.com/search.json?engine=google_flights&departure_id={base_freebase_id}&arrival_id={freebase_id}&outbound_date={start_date}&return_date={end_date}&currency=GBP&api_key={flight_api_key}&hl=en"
     
+    # Make a request to the API    
+    response = requests.get(url)
+    # Check if the response is successful
+    if response.status_code != 200:
+        # If there is an error, store the error message in the flight_data dictionary
+        error_content = response.text
+        # Store the error message in the flight_data dictionary
+        flight_data[city] = {"error": f"Error: {response.status_code}", "message": error_content}
+        # Return the flight data
+        return flight_data
+    
+    # Parse the response data
+    response_data = response.json()
+        
+    # Extract the useful and required information from the response
+    try:
+        best_flight = response_data['best_flights'][0]
+        flights = best_flight['flights']
+        layovers = best_flight.get('layovers', [])
+        total_duration = best_flight['total_duration']
+        carbon_emissions = best_flight['carbon_emissions']['this_flight']
+        price = best_flight['price']
+        airline_logo = best_flight['airline_logo']
+            
+        flight_info = {
+            "flights": [],
+            "layovers": layovers,
+            "total_duration": total_duration,
+            "carbon_emissions": carbon_emissions,
+            "price": price,
+            "airline_logo": airline_logo
+        }
+            
+        for flight in flights:
+            flight_info["flights"].append({
+                "departure_airport": flight['departure_airport']['name'],
+                "departure_time": flight['departure_airport']['time'],
+                "arrival_airport": flight['arrival_airport']['name'],
+                "arrival_time": flight['arrival_airport']['time'],
+                "duration": flight['duration'],
+                "airplane": flight['airplane'],
+                "airline": flight['airline'],
+                "airline_logo": flight['airline_logo'],
+                "travel_class": flight['travel_class'],
+                "flight_number": flight['flight_number'],
+                "legroom": flight['legroom'],
+                "extensions": flight['extensions']
+            })
+        # Store the flight information in the flight_data dictionary
+        flight_data[city] = flight_info
+    # Handle exceptions for missing data
+    except (IndexError, KeyError) as e:
+        # Store the error message in the flight_data dictionary
+        flight_data[city] = {"error": "No flight data found", "details": str(e)}
+    # Return the flight data
     return flight_data
 
 

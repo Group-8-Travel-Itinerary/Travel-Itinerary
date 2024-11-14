@@ -132,6 +132,11 @@ def itinerary():
         
         formatted_answers = session['formatted_answers']
         destination = session['destination']
+        
+        # Find the user location using the IP address
+        get_user_location()
+        # Get the city from the session
+        city = session.get('city')
 
         prompt = form_itinerary_prompt(destination, formatted_answers, quiz_instructions, itinerary_activities)
 
@@ -140,16 +145,17 @@ def itinerary():
         # Call the Pexels API function to get images
         images = pexels_images(destination)
         
+        # Generate the dates for the next week starting from today formatted in YYYY-MM-DD
+        start_date = datetime.now().date().strftime('%Y-%m-%d')
+        end_date = (datetime.now().date() + timedelta(days=7)).strftime('%Y-%m-%d')
         # Call the Flights API function to get flight information
-        flights = flights_api()
-        # WIP: Awaiting implementation of the flights_api function
+        flights = flights_api(city, destination, start_date, end_date)
         
         # Call the Weather API function to get weather information
         weather = weather_api(destination)
         # WIP: Awaiting implementation of the weather_api function
         
         # Combine the data and render a new template
-        #return render_template('itinerary.html', images=images, flights=flights, weather=weather)
         return render_template('itinerary.html', itinerary=itinerary)
     return redirect(url_for('index', info='Please enter a destination to view your itenary.'))
 

@@ -334,16 +334,16 @@ def weather_api(cities):
     return weather_data
 
 def pexels_images(query, per_page=10):
-    # Function to get images from Pexels API
+    # Function to get landscape images from Pexels API
     url = "https://api.pexels.com/v1/search"
     headers = {
         "Authorization": pexels_api_key
     }
     params = {
         "query": query,
-        "per_page": per_page
+        "per_page": per_page,
+        "orientation": "landscape"  # Ensure only landscape images are fetched
     }
-    
     
     response = requests.get(url, headers=headers, params=params)
         
@@ -356,19 +356,6 @@ def pexels_images(query, per_page=10):
         image_urls = [photo["src"]["original"] for photo in photos]
         
         return image_urls
-
-#not sure why this is here - Testing
-#print(weather_api(["New York", "Los Angeles", "Chicago"]))
-
-#not sure why this is here - Testing
-#cities = ["New York", "Los Angeles", "Chicago"]
-#start_date = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
-#end_date = (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
-
-#print(flights_api("Glasgow", cities, start_date, end_date))
-
-
-
 
 def get_activities(destination, preferences):
     # Define the prompt for OpenAI to generate activities

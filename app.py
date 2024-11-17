@@ -107,52 +107,6 @@ def quiz():
             default_quiz = json.load(f)
     return render_template('quiz.html', quiz= default_quiz)
 
-@app.route('/itinerary', methods=['GET', 'POST'])
-def itinerary():
-    if request.method == 'POST':
-       
-        
-        # Get list of selected activity IDs from the form
-        selected_activities = request.form.getlist('selected_activities')
-        # Convert selected activity IDs from string to integers
-        selected_activity_ids = [int(activity_id) for activity_id in selected_activities]
-        
-        # Retrieve the activities from session
-        activities_data = session.get('activities', {}).get('activities', [])
-
-        # Filter the activities based on selected IDs
-        itinerary_activities = [activities_data[activity_id] for activity_id in selected_activity_ids]
-
-        #formulate prompt for itineray using all session data and activities selected
-        OptionalCustomQuiz = session.get('custom_quiz')
-        if OptionalCustomQuiz is None:
-         quiz_instructions = load_gpt_instructions('gpt_instructions/quiz_instructions.txt')
-        else:
-         quiz_instructions = OptionalCustomQuiz
-        
-        formatted_answers = session['formatted_answers']
-        destination = session['destination']
-
-        prompt = form_itinerary_prompt(destination, formatted_answers, quiz_instructions, itinerary_activities)
-
-        itinerary = get_itinerary(prompt)
-
-        # Call the Pexels API function to get images
-        images = pexels_images(destination)
-        
-        # Call the Flights API function to get flight information
-        flights = flights_api()
-        # WIP: Awaiting implementation of the flights_api function
-        
-        # Call the Weather API function to get weather information
-        weather = weather_api(destination)
-        # WIP: Awaiting implementation of the weather_api function
-        
-        # Combine the data and render a new template
-        #return render_template('itinerary.html', images=images, flights=flights, weather=weather)
-        return render_template('itinerary.html', itinerary=itinerary)
-    return redirect(url_for('index', info='Please enter a destination to view your itenary.'))
-
 #sort out later for testing here now 
 credentials = yaml.load(open('config.yaml'), Loader=yaml.FullLoader)
 places_api_key = credentials['places']['api_key']
@@ -228,7 +182,80 @@ def activities():
             detailed_activities_map=detailed_activities_map
         )
         
+@app.route('/itinerary', methods=['GET', 'POST'])
+def itinerary():
+    if request.method == 'POST':
+       
         
+        # Get list of selected activity IDs from the form
+        selected_activities = request.form.getlist('selected_activities')
+        # Convert selected activity IDs from string to integers
+        selected_activity_ids = [int(activity_id) for activity_id in selected_activities]
+        
+        # Retrieve the activities from session
+        activities_data = session.get('activities', {}).get('activities', [])
+
+        # Filter the activities based on selected IDs
+        itinerary_activities = [activities_data[activity_id] for activity_id in selected_activity_ids]
+
+        #formulate prompt for itineray using all session data and activities selected
+        OptionalCustomQuiz = session.get('custom_quiz')
+        if OptionalCustomQuiz is None:
+         quiz_instructions = load_gpt_instructions('gpt_instructions/quiz_instructions.txt')
+        else:
+         quiz_instructions = OptionalCustomQuiz
+        
+        formatted_answers = session['formatted_answers']
+        destination = session['destination']
+        
+        # Find the user location using the IP address
+        get_user_location()
+        # Get the city from the session
+        city = session.get('city')
+
+        prompt = form_itinerary_prompt(destination, formatted_answers, quiz_instructions, itinerary_activities)
+
+        itinerary = get_itinerary(prompt)
+        
+        # API Calls for Flights, Images and Weather
+
+        # Call the Pexels API function to get images
+        images = pexels_images(destination)
+        
+        # Generate the dates for the next week starting from today formatted in YYYY-MM-DD
+        start_date = datetime.now().date().strftime('%Y-%m-%d')
+        end_date = (datetime.now().date() + timedelta(days=7)).strftime('%Y-%m-%d')
+        # Call the Flights API function to get flight information
+        flights = flights_api(city, destination, start_date, end_date)
+        # Extract flight details from the response
+        flight_details = []
+        # Iterate over the flights dictionary to extract the flight details
+        for destination, flight_info in flights.items():
+            # Iterate over the flights list to extract the flight details
+            for flight in flight_info['flights']:
+                # Append the flight details to the flight_details list
+                flight_details.append({
+                    'departure_airport': flight['departure_airport'],
+                    'arrival_airport': flight['arrival_airport'],
+                    'airline': flight['airline'],
+                    'airline_logo': flight['airline_logo'],
+                    'price': flight_info['price'],
+                    'layovers': [{'name': layover['name'], 'duration': layover['duration']} for layover in flight_info['layovers']],
+                    'google_flights_url': flight_info['google_flights_url']
+            })
+
+        # Store the flight details in the session
+        session['flight_details'] = flight_details
+        
+        # Call the Weather API function to get weather information
+        weather = weather_api(destination)
+        
+        # Combine the data and render a new template
+        return render_template('itinerary.html', itinerary=itinerary, flights=flight_details, images=images, weather=weather)
+    return redirect(url_for('index', info='Please enter a destination to view your itenary.'))
+        
+
+# Non Flask Route Functions which are required to be within the app.py file     
 
 def get_user_location():
     # Make a request to get the user's IP address

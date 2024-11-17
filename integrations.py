@@ -17,7 +17,48 @@ openai.api_key = credentials['openai']['api_key']
 weather_api_key = credentials['weather']['api_key']
 flight_api_key = credentials['flight']['api_key']
 
+def get_freebase_id(city_name):
+    # Define the Wikidata API endpoint
+    wikidata_url = 'https://www.wikidata.org/w/api.php'
 
+    # Define the parameters for the API request
+    params = {
+        'action': 'wbsearchentities',
+        'search': city_name,
+        'language': 'en',
+        'format': 'json'
+    }
+
+    # Make the API request
+    response = requests.get(wikidata_url, params=params)
+    data = response.json()
+
+    # Check if the city was found
+    if not data['search']:
+        return None
+
+    # Get the Wikidata entity ID for the city
+    entity_id = data['search'][0]['id']
+
+    # Define the parameters to get the entity data
+    params = {
+        'action': 'wbgetentities',
+        'ids': entity_id,
+        'props': 'claims',
+        'format': 'json'
+    }
+
+    # Make the API request to get the entity data
+    response = requests.get(wikidata_url, params=params)
+    data = response.json()
+
+    # Extract the Freebase ID (P646) from the entity data
+    claims = data['entities'][entity_id]['claims']
+    if 'P646' in claims:
+        freebase_id = claims['P646'][0]['mainsnak']['datavalue']['value']
+        return freebase_id
+
+    return None
 
 # Function for sending quiz answers to GPT API
 def send_quiz_to_gpt(message, OptionalCustomQuiz=None):
@@ -198,14 +239,16 @@ def flights_api(request_city, cities, start_date, end_date):
             carbon_emissions = best_flight['carbon_emissions']['this_flight']
             price = best_flight['price']
             airline_logo = best_flight['airline_logo']
+            google_flights_url = response_data['search_metadata']['google_flights_url']
             
             flight_info = {
-                "flights": [],
-                "layovers": layovers,
-                "total_duration": total_duration,
-                "carbon_emissions": carbon_emissions,
-                "price": price,
-                "airline_logo": airline_logo
+            "flights": [],
+            "layovers": layovers,
+            "total_duration": total_duration,
+            "carbon_emissions": carbon_emissions,
+            "price": price,
+            "airline_logo": airline_logo,
+            "google_flights_url": google_flights_url
             }
             
             for flight in flights:
@@ -222,14 +265,13 @@ def flights_api(request_city, cities, start_date, end_date):
                     "flight_number": flight['flight_number'],
                     "legroom": flight['legroom'],
                     "extensions": flight['extensions']
-                })
+            })
             
             flight_data[city] = flight_info
         except (IndexError, KeyError) as e:
             flight_data[city] = {"error": "No flight data found", "details": str(e)}
     
     return flight_data
-
 
 # Function to get the weather data from an API
 def weather_api(cities):
@@ -290,49 +332,6 @@ def weather_api(cities):
         }
     
     return weather_data
-
-def get_freebase_id(city_name):
-    # Define the Wikidata API endpoint
-    wikidata_url = 'https://www.wikidata.org/w/api.php'
-
-    # Define the parameters for the API request
-    params = {
-        'action': 'wbsearchentities',
-        'search': city_name,
-        'language': 'en',
-        'format': 'json'
-    }
-
-    # Make the API request
-    response = requests.get(wikidata_url, params=params)
-    data = response.json()
-
-    # Check if the city was found
-    if not data['search']:
-        return None
-
-    # Get the Wikidata entity ID for the city
-    entity_id = data['search'][0]['id']
-
-    # Define the parameters to get the entity data
-    params = {
-        'action': 'wbgetentities',
-        'ids': entity_id,
-        'props': 'claims',
-        'format': 'json'
-    }
-
-    # Make the API request to get the entity data
-    response = requests.get(wikidata_url, params=params)
-    data = response.json()
-
-    # Extract the Freebase ID (P646) from the entity data
-    claims = data['entities'][entity_id]['claims']
-    if 'P646' in claims:
-        freebase_id = claims['P646'][0]['mainsnak']['datavalue']['value']
-        return freebase_id
-
-    return None
 
 def pexels_images(query, per_page=10):
     # Function to get images from Pexels API

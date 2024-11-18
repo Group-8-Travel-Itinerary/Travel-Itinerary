@@ -16,6 +16,7 @@ pexels_api_key = credentials['pexels']['api_key']
 openai.api_key = credentials['openai']['api_key']
 weather_api_key = credentials['weather']['api_key']
 flight_api_key = credentials['flight']['api_key']
+ip_api_key = credentials['geoip']['api_key']
 
 def get_freebase_id(city_name):
     # Define the Wikidata API endpoint
@@ -356,6 +357,21 @@ def pexels_images(query, per_page=10):
         image_urls = [photo["src"]["original"] for photo in photos]
         
         return image_urls
+    
+def get_user_location():
+    # Make a request to get the user's IP address
+    response = requests.get('https://httpbin.org/ip')
+    # Parse the JSON response and get the user's IP address
+    user_ip = response.json()['origin']
+    url = f'https://api.ipgeolocation.io/ipgeo?apiKey={ip_api_key}&ip={user_ip}'
+    # Create a request to the URL
+    response = requests.get(url)
+    # Parse the JSON response
+    json_data = response.json()
+    # Find the city in the response
+    city = json_data.get('city')
+    # Store the city in the session
+    return city
 
 def get_activities(destination, preferences):
     # Define the prompt for OpenAI to generate activities

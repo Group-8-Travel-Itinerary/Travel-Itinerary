@@ -146,3 +146,26 @@ footer {
 .custom-btn:hover {
     background-color: #2a9cd8 !important; /* Slightly darker shade on hover */
 }
+
+.rounded-image {
+    border-radius: 10px;
+}
+
+    /* Fade-In Animation */
+    .fade-in {
+        opacity: 0;
+        transform: translateY(10px);
+        animation: fadeIn 1s ease-out forwards;
+    }
+
+    /* Keyframes for Fade-In */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }

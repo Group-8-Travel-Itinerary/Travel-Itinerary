@@ -3,32 +3,37 @@
 {% block title %}Itinerary{% endblock %}
 
 {% block content %}
+
+<div id="loadingSpinner" class="loading-overlay">
+    <div class="loader"></div>
+</div>
+
 <div class="container my-5">
     <!-- Main Image and Gallery -->
     <div class="row mb-4">
-        <div class="col-md-6">
-            <img src="/static/Qatar-Opens-1.jpg" alt="Main Destination Image" class="img-fluid">
+        <div class="col-md-6 fade-in">
+            <img src="/static/Qatar-Opens-1.jpg" alt="Main Destination Image" class="img-fluid rounded-image">
         </div>
         <div class="col-md-6">
             <div class="row">
-                <div class="col-6 mb-3">
-                    <img src="/static/Qatar-Opens-1.jpg" alt="Gallery Image 1" class="img-fluid">
+                <div class="col-6 mb-3 fade-in">
+                    <img src="/static/Qatar-Opens-1.jpg" alt="Gallery Image 1" class="img-fluid rounded-image">
                 </div>
-                <div class="col-6 mb-3">
-                    <img src="/static/Qatar-Opens-1.jpg" alt="Gallery Image 2" class="img-fluid">
+                <div class="col-6 mb-3 fade-in">
+                    <img src="/static/Qatar-Opens-1.jpg" alt="Gallery Image 2" class="img-fluid rounded-image">
                 </div>
-                <div class="col-6">
-                    <img src="/static/Qatar-Opens-1.jpg" alt="Gallery Image 3" class="img-fluid">
+                <div class="col-6 fade-in">
+                    <img src="/static/Qatar-Opens-1.jpg" alt="Gallery Image 3" class="img-fluid rounded-image">
                 </div>
-                <div class="col-6">
-                    <img src="/static/Qatar-Opens-1.jpg" alt="Gallery Image 4" class="img-fluid">
+                <div class="col-6 fade-in">
+                    <img src="/static/Qatar-Opens-1.jpg" alt="Gallery Image 4" class="img-fluid rounded-image">
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Title, Description, and Book Now Button -->
-    <div class="row align-items-center mb-4">
+    <div class="row align-items-center mb-4 fade-in">
         <div class="col-md-9 text-start">
             <h2>Doha, Qatar</h2>
             <p>Explore this incredible destination with our customized itinerary, crafted for unforgettable experiences.</p>
@@ -39,7 +44,7 @@
     </div>
 
     <!-- Tabs for Itinerary Days -->
-    <ul class="nav nav-tabs mb-3" id="itineraryTab" role="tablist">
+    <ul class="nav nav-tabs mb-3 fade-in" id="itineraryTab" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="day1-tab" data-bs-toggle="tab" data-bs-target="#day1" type="button" role="tab" aria-controls="day1" aria-selected="true">Day 1</button>
         </li>
@@ -52,7 +57,7 @@
     </ul>
 
     <!-- Tab Content for Itinerary Days -->
-    <div class="tab-content" id="itineraryContent">
+    <div class="tab-content fade-in" id="itineraryContent">
         <div class="tab-pane fade show active" id="day1" role="tabpanel" aria-labelledby="day1-tab">
             <h4>Day 1</h4>
             <p>Start your journey with a guided tour of the local landmarks, including a visit to historical sites and lunch at a popular local spot.</p>
@@ -67,6 +72,4 @@
         </div>
     </div>
 </div>
-
-
 {% endblock %}

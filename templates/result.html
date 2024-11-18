@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Itinerary{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Main Image and Gallery -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <img src="/static/Qatar-Opens-1.jpg" alt="Main Destination Image" class="img-fluid">
+        </div>
+        <div class="col-md-6">
+            <div class="row">
+                <div class="col-6 mb-3">
+                    <img src="/static/Qatar-Opens-1.jpg" alt="Gallery Image 1" class="img-fluid">
+                </div>
+                <div class="col-6 mb-3">
+                    <img src="/static/Qatar-Opens-1.jpg" alt="Gallery Image 2" class="img-fluid">
+                </div>
+                <div class="col-6">
+                    <img src="/static/Qatar-Opens-1.jpg" alt="Gallery Image 3" class="img-fluid">
+                </div>
+                <div class="col-6">
+                    <img src="/static/Qatar-Opens-1.jpg" alt="Gallery Image 4" class="img-fluid">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Title, Description, and Book Now Button -->
+    <div class="row align-items-center mb-4">
+        <div class="col-md-9 text-start">
+            <h2>Doha, Qatar</h2>
+            <p>Explore this incredible destination with our customized itinerary, crafted for unforgettable experiences.</p>
+        </div>
+        <div class="col-md-3 text-end">
+            <a href="#" class="btn custom-btn">Book Now</a>
+        </div>
+    </div>
+
+    <!-- Tabs for Itinerary Days -->
+    <ul class="nav nav-tabs mb-3" id="itineraryTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="day1-tab" data-bs-toggle="tab" data-bs-target="#day1" type="button" role="tab" aria-controls="day1" aria-selected="true">Day 1</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="day2-tab" data-bs-toggle="tab" data-bs-target="#day2" type="button" role="tab" aria-controls="day2" aria-selected="false">Day 2</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="day3-tab" data-bs-toggle="tab" data-bs-target="#day3" type="button" role="tab" aria-controls="day3" aria-selected="false">Day 3</button>
+        </li>
+    </ul>
+
+    <!-- Tab Content for Itinerary Days -->
+    <div class="tab-content" id="itineraryContent">
+        <div class="tab-pane fade show active" id="day1" role="tabpanel" aria-labelledby="day1-tab">
+            <h4>Day 1</h4>
+            <p>Start your journey with a guided tour of the local landmarks, including a visit to historical sites and lunch at a popular local spot.</p>
+        </div>
+        <div class="tab-pane fade" id="day2" role="tabpanel" aria-labelledby="day2-tab">
+            <h4>Day 2</h4>
+            <p>Continue your exploration with an outdoor adventure, such as a hike or scenic drive, followed by an evening of dining and entertainment.</p>
+        </div>
+        <div class="tab-pane fade" id="day3" role="tabpanel" aria-labelledby="day3-tab">
+            <h4>Day 3</h4>
+            <p>Wrap up your trip with a relaxing morning, optional activities, and a memorable farewell dinner.</p>
+        </div>
+    </div>
+</div>
+
+<!-- CSS for Custom Button and Styling -->
+<style>
+    .custom-btn {
+        padding: 15px 20px; /* Increased button size */
+        font-size: 1.2rem; /* Bigger font size */
+        background-color: #38b6ff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .custom-btn:hover {
+        background-color: #2a9cd8;
+    }
+
+    .row.align-items-center {
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}

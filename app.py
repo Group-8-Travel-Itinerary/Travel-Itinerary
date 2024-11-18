@@ -245,9 +245,13 @@ def get_user_location():
     # Store the city in the session
     session['city'] = city
 
+@app.route('/destinations')
+def destinations():
+    return render_template('destinations.html')
 
-
-
+@app.route('/result')
+def result():
+    return render_template('result.html')
 
 # Run the Flask app
 if __name__ == '__main__':

@@ -105,3 +105,6 @@ logs/
 # Ignore YAML files
 *.yaml
 *.yaml
+
+# Exclude flask session data
+flask_session/

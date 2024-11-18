@@ -103,6 +103,5 @@ logs/
 *.pytest_cache/
 *.coverage
 # Ignore YAML files
-# *.yaml
-# *.yaml
-# Commented out to allow YAML files for now
+*.yaml
+*.yaml

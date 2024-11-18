@@ -1,11 +1,3 @@
-// Toggle the "More Details" section
-document.querySelectorAll('.more-info-btn').forEach(button => {
-    button.addEventListener('click', function () {
-        const moreInfo = this.nextElementSibling;
-        moreInfo.style.display = (moreInfo.style.display === 'block') ? 'none' : 'block';
-    });
-});
-
 // Enable horizontal scrolling with mouse wheel
 document.querySelectorAll('.card-container').forEach(container => {
     container.addEventListener('wheel', function (event) {

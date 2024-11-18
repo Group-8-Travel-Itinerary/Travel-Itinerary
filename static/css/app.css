@@ -133,7 +133,8 @@ footer {
 
 /* Custom Button Styling */
 .custom-btn {
-    padding: 10px 15px;
+    padding: 10px 20px !important;
+    font-size: 1.2rem !important;
     background-color: #38b6ff !important; /* Custom color */
     color: white !important; /* Text color */
     border: none;

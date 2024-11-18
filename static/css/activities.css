@@ -1,0 +1,68 @@
+.activity-cards {
+    margin-top: 20px;
+}
+
+.card {
+    margin-bottom: 20px;
+}
+
+.card-container {
+    display: flex;
+    overflow-x: auto;
+    gap: 10px;
+    padding: 10px;
+    background-color: aliceblue;
+}
+
+.info-card {
+    min-width: 200px;
+    max-width: 250px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    text-align: center;
+    background-color: white;
+}
+
+.info-card p {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333;
+    margin: 10px 0;
+    text-align: left;
+}
+.info-card p a{
+    text-align: center;
+}
+
+.info-card img {
+    width: 180px;
+    height: 170px;
+    border-radius: 5px;
+    object-fit: cover;
+}
+.btn-info, .btn{
+  display: block;
+  width: 8rem;
+  margin: 0.5rem 0;
+  background-color: #38b6ff;
+  color: white;
+}
+.btn-info:hover, .btn:hover {
+    background-color: #2a9cd8;
+    color: #fff;
+    cursor: pointer;
+}
+
+.container{
+    max-width: 950px;
+}
+
+.more-info h4{
+    line-height: 1.6;
+}
+
+.btn-submit{
+    width: 35%;
+    margin: 0 auto;
+}

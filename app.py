@@ -34,8 +34,7 @@ def index():
         # Get the destination input from the form
         initial_prompt = request.form.get('destinationInput')
 
-        if initial_prompt:          
-            breakpoint()
+        if initial_prompt:
             # Call get_custom_quiz with error handling
             custom_quiz = get_custom_quiz(initial_prompt)
             if custom_quiz:
@@ -212,7 +211,7 @@ def itinerary():
         if len(valid_activity_ids) != len(selected_activity_ids):
             flash('One or more selected activities are invalid.', 'error')
             return redirect(url_for('activities'))
-          
+
         # Filter the activities based on selected IDs
         itinerary_activities = [activities_data[activity_id] for activity_id in valid_activity_ids]
 
@@ -235,19 +234,30 @@ def itinerary():
 
         itinerary = get_itinerary(prompt)
         
+        # Ensure itinerary is parsed as JSON
+        try:
+            itinerary = json.loads(itinerary)
+        except json.JSONDecodeError as e:
+            flash ('Error parsing itinerary JSON', 'error')
+            return redirect(url_for('index'))
+        # Place the itenerary variable inside the intenerary key
+        itinerary = itinerary['itinerary']
+        
         # API Calls for Flights, Images and Weather
 
         # Call the Pexels API function to get images
         images = pexels_images(destination)
         
-        # Generate the dates for the next week starting from today formatted in YYYY-MM-DD
+       # Generate the dates for the next week starting from today formatted in YYYY-MM-DD
         start_date = datetime.now().date().strftime('%Y-%m-%d')
         end_date = (datetime.now().date() + timedelta(days=7)).strftime('%Y-%m-%d')
+        # Strip anything after the , in the destination to get the city name for flights
+        flight_destination = destination.split(',')[0]
         # Call the Flights API function to get flight information
-        flights = flights_api(city, [destination], start_date, end_date)
-        # Extract flight details from the response
+        flights = flights_api(city, flight_destination, start_date, end_date)
+        
+        # Extract the flight details from the response
         flight_details = []
-        # Iterate over the flights dictionary to extract the flight details
         for destination, flight_info in flights.items():
             if 'flights' in flight_info:
                 # Iterate over the flights list to extract the flight details
@@ -267,12 +277,12 @@ def itinerary():
                     'error': flight_info.get('error', 'No flight data found'),
                     'details': flight_info.get('details', '')
                 })
-
-        # Store the flight details in the session
-        session['flight_details'] = flight_details
         
         # Call the Weather API function to get weather information
         weather = weather_api([destination])
+        
+        print(f'Flights: {flights}')
+        print(f"Weather: {weather}")
         
         # Combine the data and render a new template
         return render_template('result.html', itinerary=itinerary, flights=flight_details, images=images, weather=weather, destination=destination)

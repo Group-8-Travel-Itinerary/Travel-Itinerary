@@ -16,18 +16,11 @@
         </div>
         <div class="col-md-6">
             <div class="row">
+                {% for i in range(1, 5) %}
                 <div class="col-6 mb-3 fade-in">
-                    <img src="{{ images[1] }}" alt="Gallery Image 1" class="img-fluid rounded-image">
+                    <img src="{{ images[i] }}" alt="Gallery Image {{ i }}" class="img-fluid rounded-image">
                 </div>
-                <div class="col-6 mb-3 fade-in">
-                    <img src="{{ images[2] }}" alt="Gallery Image 2" class="img-fluid rounded-image">
-                </div>
-                <div class="col-6 fade-in">
-                    <img src="{{ images[3] }}" alt="Gallery Image 3" class="img-fluid rounded-image">
-                </div>
-                <div class="col-6 fade-in">
-                    <img src="{{ images[4] }}" alt="Gallery Image 4" class="img-fluid rounded-image">
-                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
@@ -35,11 +28,11 @@
     <!-- Title, Description, and Book Now Button -->
     <div class="row align-items-center mb-4 fade-in">
         <div class="col-md-9 text-start">
-            <h2>{{ Destination }}</h2>
+            <h2>{{ destination }}</h2>
             <p>Explore this incredible destination with our customized itinerary, crafted for unforgettable experiences.</p>
         </div>
         <div class="col-md-3 text-end">
-            <a href="{{ flights['google_flights_url'] }}" class="btn custom-btn">Book Now</a>
+            <a href="{{ flights.0.google_flights_url }}" class="btn custom-btn">Book Now</a>
         </div>
     </div>
 
@@ -47,7 +40,7 @@
     <ul class="nav nav-tabs mb-3 fade-in" id="itineraryTab" role="tablist">
         {% for day in itinerary %}
         <li class="nav-item" role="presentation">
-            <button class="nav-link {% if forloop.first %}active{% endif %}" id="day{{ forloop.counter }}-tab" data-bs-toggle="tab" data-bs-target="#day{{ forloop.counter }}" type="button" role="tab" aria-controls="day{{ forloop.counter }}" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">Day {{ forloop.counter }}</button>
+            <button class="nav-link {% if loop.first %}active{% endif %}" id="day{{ loop.index }}-tab" data-bs-toggle="tab" data-bs-target="#day{{ loop.index }}" type="button" role="tab" aria-controls="day{{ loop.index }}" aria-selected="{% if loop.first %}true{% else %}false{% endif %}">{{ day.day }}</button>
         </li>
         {% endfor %}
     </ul>
@@ -55,8 +48,8 @@
     <!-- Tab Content for Itinerary Days -->
     <div class="tab-content fade-in" id="itineraryContent">
         {% for day in itinerary %}
-        <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="day{{ forloop.counter }}" role="tabpanel" aria-labelledby="day{{ forloop.counter }}-tab">
-            <h4>Day {{ forloop.counter }}</h4>
+        <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="day{{ loop.index }}" role="tabpanel" aria-labelledby="day{{ loop.index }}-tab">
+            <h4>{{ day.day }}</h4>
             <ul>
                 {% for activity in day.activities %}
                 <li><strong>{{ activity.time }}:</strong> {{ activity.activity }}</li>

@@ -38,26 +38,28 @@ def get_freebase_id(city_name):
     if not data['search']:
         return None
 
-    # Get the Wikidata entity ID for the city
-    entity_id = data['search'][0]['id']
+    # Iterate through the search results to find a valid Freebase ID
+    for result in data['search']:
+        entity_id = result['id']
 
-    # Define the parameters to get the entity data
-    params = {
-        'action': 'wbgetentities',
-        'ids': entity_id,
-        'props': 'claims',
-        'format': 'json'
-    }
+        # Define the parameters to get the entity data
+        params = {
+            'action': 'wbgetentities',
+            'ids': entity_id,
+            'props': 'claims',
+            'format': 'json'
+        }
 
-    # Make the API request to get the entity data
-    response = requests.get(wikidata_url, params=params)
-    data = response.json()
+        # Make the API request to get the entity data
+        response = requests.get(wikidata_url, params=params)
+        data = response.json()
 
-    # Extract the Freebase ID (P646) from the entity data
-    claims = data['entities'][entity_id]['claims']
-    if 'P646' in claims:
-        freebase_id = claims['P646'][0]['mainsnak']['datavalue']['value']
-        return freebase_id
+        # Extract the Freebase ID (P646) from the entity data
+        claims = data['entities'][entity_id]['claims']
+        if 'P646' in claims:
+            freebase_id = claims['P646'][0]['mainsnak']['datavalue']['value']
+            if freebase_id:
+                return freebase_id
 
     return None
 
@@ -212,37 +214,37 @@ def load_gpt_instructions(file_path):
     return file.read()
 
 # Function to get data from a flights API to give an idea of the prices
-def flights_api(request_city, cities, start_date, end_date):
+def flights_api(request_city, destination_city, start_date, end_date):
     flight_data = {}
     
-    for city in cities:
-        # Get FreebaseID for the city
-        freebase_id = get_freebase_id(city)
-        base_freebase_id = get_freebase_id(request_city)
+    # Get FreebaseID for the cities
+    freebase_id = get_freebase_id(destination_city)
+    base_freebase_id = get_freebase_id(request_city)
+    
+    # Flight API URL with parameters
+    url = f"https://serpapi.com/search.json?engine=google_flights&departure_id={base_freebase_id}&arrival_id={freebase_id}&outbound_date={start_date}&return_date={end_date}&currency=GBP&api_key={flight_api_key}&hl=en"
+    
+    response = requests.get(url)
+    
+    if response.status_code != 200:
+        error_content = response.text
+        flight_data[destination_city] = {"error": f"Error: {response.status_code}", "message": error_content}
+        return flight_data
+    
+    response_data = response.json()
+    
+    # Extracting useful information from the response
+    try:
+        best_flight = response_data['best_flights'][0]
+        flights = best_flight['flights']
+        layovers = best_flight.get('layovers', [])
+        total_duration = best_flight['total_duration']
+        carbon_emissions = best_flight['carbon_emissions']['this_flight']
+        price = best_flight['price']
+        airline_logo = best_flight['airline_logo']
+        google_flights_url = response_data['search_metadata']['google_flights_url']
         
-        # Flight API URL with parameters
-        url = f"https://serpapi.com/search.json?engine=google_flights&departure_id={base_freebase_id}&arrival_id={freebase_id}&outbound_date={start_date}&return_date={end_date}&currency=GBP&api_key={flight_api_key}&hl=en"
-        
-        response = requests.get(url)
-        if response.status_code != 200:
-            error_content = response.text
-            flight_data[city] = {"error": f"Error: {response.status_code}", "message": error_content}
-            continue
-        
-        response_data = response.json()
-        
-        # Extracting useful information from the response
-        try:
-            best_flight = response_data['best_flights'][0]
-            flights = best_flight['flights']
-            layovers = best_flight.get('layovers', [])
-            total_duration = best_flight['total_duration']
-            carbon_emissions = best_flight['carbon_emissions']['this_flight']
-            price = best_flight['price']
-            airline_logo = best_flight['airline_logo']
-            google_flights_url = response_data['search_metadata']['google_flights_url']
-            
-            flight_info = {
+        flight_info = {
             "flights": [],
             "layovers": layovers,
             "total_duration": total_duration,
@@ -250,27 +252,27 @@ def flights_api(request_city, cities, start_date, end_date):
             "price": price,
             "airline_logo": airline_logo,
             "google_flights_url": google_flights_url
-            }
-            
-            for flight in flights:
-                flight_info["flights"].append({
-                    "departure_airport": flight['departure_airport']['name'],
-                    "departure_time": flight['departure_airport']['time'],
-                    "arrival_airport": flight['arrival_airport']['name'],
-                    "arrival_time": flight['arrival_airport']['time'],
-                    "duration": flight['duration'],
-                    "airplane": flight['airplane'],
-                    "airline": flight['airline'],
-                    "airline_logo": flight['airline_logo'],
-                    "travel_class": flight['travel_class'],
-                    "flight_number": flight['flight_number'],
-                    "legroom": flight['legroom'],
-                    "extensions": flight['extensions']
+        }
+        
+        for flight in flights:
+            flight_info["flights"].append({
+                "departure_airport": flight['departure_airport']['name'],
+                "departure_time": flight['departure_airport']['time'],
+                "arrival_airport": flight['arrival_airport']['name'],
+                "arrival_time": flight['arrival_airport']['time'],
+                "duration": flight['duration'],
+                "airplane": flight['airplane'],
+                "airline": flight['airline'],
+                "airline_logo": flight['airline_logo'],
+                "travel_class": flight['travel_class'],
+                "flight_number": flight['flight_number'],
+                "legroom": flight['legroom'],
+                "extensions": flight['extensions']
             })
-            
-            flight_data[city] = flight_info
-        except (IndexError, KeyError) as e:
-            flight_data[city] = {"error": "No flight data found", "details": str(e)}
+        
+        flight_data[destination_city] = flight_info
+    except (IndexError, KeyError) as e:
+        flight_data[destination_city] = {"error": "No flight data found", "details": str(e)}
     
     return flight_data
 
@@ -581,11 +583,16 @@ def get_itinerary(prompt):
     }
 
     response = requests.post(url, headers=headers, json=request_body)
+    
+    
 
     if response.status_code == 200:
         response_data = response.json()
         itinerary_content = response_data["choices"][0]["message"]["content"]
+        if itinerary_content.startswith("```json"):
+            itinerary_content = itinerary_content[8:-3].strip()  # Remove the code block markers
         return itinerary_content
     else:
         flash(f"Error fetching itinerary: {response.text}", "error")
         return None
+    

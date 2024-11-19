@@ -1,6 +1,5 @@
 # Description: This file contains the code for the Flask app that will be used to run the web application.
 # Imports the necessary modules and libraries
-import json
 from pathlib import Path
 from flask import Flask, render_template, request, url_for, flash, redirect, session
 from datetime import datetime, timedelta
@@ -9,6 +8,7 @@ import requests
 import yaml
 from integrations import concat_preferences_for_activities, form_itinerary_prompt, get_activities, get_activity_details, get_itinerary, get_photo_url, load_gpt_instructions, send_quiz_to_gpt, pexels_images, get_custom_quiz, flights_api, text_search_activities, weather_api, get_user_location
 import os
+from flask_session import Session as FlaskSession
 import logging
 import json
 
@@ -20,6 +20,13 @@ logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
+# Configure Flask-Session
+app.config['SECRET_KEY'] = 'your_secret_key'
+app.config['SESSION_TYPE'] = 'filesystem'  # Use filesystem-based session storage
+app.config['SESSION_FILE_DIR'] = './flask_session/'  # Directory to store session files
+app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_USE_SIGNER'] = True
+FlaskSession(app)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -46,8 +53,6 @@ def index():
 
     # For a GET request, just render the index page without any quiz
     return render_template('index.html')
-
-
 
 
 # Route for the quiz page
@@ -126,14 +131,14 @@ def activities():
         session['activities'] = activities_data  # Store this in session for later access
 
         # Initialize detailed_activities_map as an empty dictionary
-        detailed_activities_map = {}
+        session['detailed_activities_map'] = {}
 
         # Render the activities page with basic information
         return render_template(
             'activities.html', 
             destination=selected_destination, 
             activities=activities_data['activities'], 
-            detailed_activities_map=detailed_activities_map
+            detailed_activities_map=session['detailed_activities_map']
         )
 
     elif request.method == 'GET':
@@ -141,39 +146,48 @@ def activities():
         activity_id = request.args.get('activity_id')
         destination = session.get('destination')
         activities_data = session.get('activities', {}).get('activities', [])
-        
-        # Initialize detailed_activities_map as an empty dictionary
-        detailed_activities_map = {}
+
+        # Initialize detailed_activities_map in the session if it doesn't exist
+        if 'detailed_activities_map' not in session:
+            session['detailed_activities_map'] = {}
+
+        detailed_activities_map = session['detailed_activities_map']
 
         if activity_id:
-            # Find the specific activity by ID
             activity_id = int(activity_id)
-            selected_activity = activities_data[activity_id] if activity_id < len(activities_data) else None
-
-            if selected_activity:
-                # Perform a search for the specific activity name
-                activity_name = selected_activity['name']
-                search_results = text_search_activities(activity_name, places_api_key)
-
-                # Gather multiple detailed options for the activity
+            logging.debug(f"Fetching details for activity_id: {activity_id}")
+            if activity_id not in detailed_activities_map:
                 detailed_options = []
-                for result in search_results['results']:
-                    place_id = result['place_id']
-                    detailed_info = get_activity_details(place_id, places_api_key)
+                try:
+                    # Perform a search for the specific activity name
+                    selected_activity = activities_data[activity_id]
+                    activity_name = selected_activity['name']
+                    search_results = text_search_activities(activity_name, places_api_key)
 
-                    detailed_options.append({
-                        "name": selected_activity["name"],
-                        "type": selected_activity["type"],
-                        "description": selected_activity["description"],
-                        "address": result.get("formatted_address", "No address available"),
-                        "rating": result.get("rating", "No rating available"),
-                        "total_ratings": result.get("user_ratings_total", "No rating count"),
-                        "photo_url": get_photo_url(result.get("photos", [{}])[0].get("photo_reference"), places_api_key),
-                        "website": detailed_info.get("result", {}).get("website", "Website not available")
-                    })
+                    # Gather multiple detailed options for the activity
+                    for result in search_results['results']:
+                        place_id = result['place_id']
+                        detailed_info = get_activity_details(place_id, places_api_key)
 
-                # Store the detailed options in a map with activity_id as the key
-                detailed_activities_map[activity_id] = detailed_options
+                        detailed_options.append({
+                            "name": selected_activity["name"],
+                            "type": selected_activity["type"],
+                            "description": selected_activity["description"],
+                            "address": result.get("formatted_address", "No address available"),
+                            "rating": result.get("rating", "No rating available"),
+                            "total_ratings": result.get("user_ratings_total", "No rating count"),
+                            "photo_url": get_photo_url(result.get("photos", [{}])[0].get("photo_reference"), places_api_key),
+                            "website": detailed_info.get("result", {}).get("website", "Website not available")
+                        })
+
+                    # Store the detailed options in the map with activity_id as the key
+                    detailed_activities_map[activity_id] = detailed_options
+
+                    # Update the session with the new detailed_activities_map
+                    session['detailed_activities_map'] = detailed_activities_map
+
+                except KeyError as e:
+                    logging.error(f"KeyError: {e} - activities_data: {activities_data}")
 
         return render_template(
             'activities.html', 
@@ -181,7 +195,7 @@ def activities():
             activities=activities_data, 
             detailed_activities_map=detailed_activities_map
         )
-        
+
 @app.route('/itinerary', methods=['GET', 'POST'])
 def itinerary():
     if request.method == 'POST':
@@ -198,7 +212,7 @@ def itinerary():
         if len(valid_activity_ids) != len(selected_activity_ids):
             flash('One or more selected activities are invalid.', 'error')
             return redirect(url_for('activities'))
-
+          
         # Filter the activities based on selected IDs
         itinerary_activities = [activities_data[activity_id] for activity_id in valid_activity_ids]
 

@@ -53,6 +53,13 @@ def index():
     # For a GET request, just render the index page without any quiz
     return render_template('index.html')
 
+@app.route('/reset-and-start-quiz', methods=['GET'])
+def reset_and_start_quiz():
+    # Clear session data
+    session.clear()  
+    # Redirect to the hardcoded quiz route
+    return redirect(url_for('quiz'))  
+
 
 # Route for the quiz page
 @app.route('/quiz', methods=['GET', 'POST'])

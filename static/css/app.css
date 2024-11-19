@@ -29,6 +29,10 @@
     color: white;
     font-weight: bold;
 }
+.navbar-brand{
+    display: flex;
+    align-items: center;
+}
 
 /* Main Container */
 .container {
@@ -117,7 +121,7 @@ footer {
 }
 
 /* Search Box Button */
-.input-group .btn {
+.input-group .btn, .btn {
     padding: 10px 15px;
     background-color: #38b6ff !important; /* Custom color */
     color: white !important; /* Text color */
@@ -141,7 +145,10 @@ footer {
     cursor: pointer;
     text-decoration: none; /* Remove underline */
 }
-
+.quiz-btn{
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+}
 .custom-btn:hover {
     background-color: #2a9cd8 !important; /* Slightly darker shade on hover */
 }

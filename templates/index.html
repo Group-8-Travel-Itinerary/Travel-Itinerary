@@ -5,12 +5,13 @@
 {% block content %}
     <div class="text-center">
         <!-- Centered Logo -->
-        <img src="/static/travel-ai.png" alt="Travel Itinerary Logo" width="200" height="200" class="my-4">
-        <h1 class="mb-4">Welcome to TravelAI</h1>
-        <p class="lead">Plan your perfect trip with Travel Itinerary.</p>
-
+        <img src="/static/travel-ai.png" alt="Travel Itinerary Logo" width="200" height="200" class="my-4 mb-0">
+        <h1 class="mb-2">Welcome to TravelAI</h1>
+        <p class="lead mb2">Plan your perfect trip with Travel Itinerary.</p>
+        <!-- Take Quiz Button -->
+        <button class="btn quiz-btn ms-2" onclick="window.location.href='/reset-and-start-quiz';">Take the Trip Quiz</button>
         <!-- Search Box with Submit Button -->
-        <form action="{{ url_for('index') }}" method="POST" class="input-group mb-3 w-50 mx-auto">
+        <form action="{{ url_for('index') }}" method="POST" class="input-group mb-3 w-50 mx-auto mt-4">
             <input type="text" class="form-control" id="destinationInput" name="destinationInput" placeholder="Enter your travel destination" aria-label="Travel destination">
             <button class="btn ms-2" type="submit">Submit</button>
         </form>

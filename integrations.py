@@ -612,30 +612,29 @@ def form_itinerary_prompt(destination, formatted_answers, quiz_instructions, iti
 
 
 
-
 def get_itinerary(prompt):
-    model = "gpt-3.5-turbo"
+    model = "gpt-4o"  # Ensure the correct model name is used
 
     messages = [
         {"role": "system", "content": "You are an expert travel assistant."},
         {
             "role": "user",
-            "content": f"""Based on the following prompt, create a travel itinerary with a day-by-day schedule, including activities and accommodations:
+            "content": f"""Based on the following prompt, create a detailed travel itinerary that includes a day-by-day schedule, with selected activities, and suggested accommodations for the destination:
             
             {prompt}
             
-            Format the response strictly in JSON with the following structure:
+            Format the response in JSON with the following structure:
             {{
                 "itinerary": [
                     {{
                         "day": "Day 1",
                         "activities": [
-                            {{"time": "9:00 AM", "activity": "Visit a local attraction"}},
+                            {{"time": "9:00 AM", "activity": "Visit a local attraction"}}, 
                             {{"time": "12:00 PM", "activity": "Lunch at a recommended restaurant"}}
                         ],
                         "accommodation": "Suggested accommodation for the night"
                     }},
-                    // Continue for each day
+                    // Continue for each day of the trip, adding activities and accommodations as needed
                 ]
             }}
             """
@@ -645,50 +644,26 @@ def get_itinerary(prompt):
     request_body = {
         "model": model,
         "messages": messages,
-        "max_tokens": 1000,
-        "temperature": 0.5
+        "max_tokens": 2000
     }
 
     url = "https://api.openai.com/v1/chat/completions"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {openai.api_key}"
+        "Authorization": f"Bearer {openai.api_key}"  # Ensure your API key is configured
     }
 
     response = requests.post(url, headers=headers, json=request_body)
+    
+    
 
     if response.status_code == 200:
         response_data = response.json()
-        content = response_data["choices"][0]["message"]["content"]
-
-        # If the content is not JSON, parse it into the desired structure
-        if not content.startswith("{"):
-            parsed_itinerary = parse_text_to_json(content)  # Helper function
-            return parsed_itinerary
-
-        return json.loads(content)
+        itinerary_content = response_data["choices"][0]["message"]["content"]
+        if itinerary_content.startswith("```json"):
+            itinerary_content = itinerary_content[8:-3].strip()  # Remove the code block markers
+        return itinerary_content
     else:
         flash(f"Error fetching itinerary: {response.text}", "error")
         return None
-
-
     
-def parse_text_to_json(text):
-    itinerary = {"itinerary": []}
-    current_day = None
-
-    for line in text.split("\n"):
-        if line.startswith("Day"):
-            if current_day:
-                itinerary["itinerary"].append(current_day)
-            current_day = {"day": line.strip(), "activities": [], "accommodation": ""}
-        elif line.startswith("-"):
-            time, activity = line[1:].split(":", 1)
-            current_day["activities"].append({"time": time.strip(), "activity": activity.strip()})
-        elif line.startswith("Accommodation:"):
-            current_day["accommodation"] = line.split(":", 1)[1].strip()
-
-    if current_day:
-        itinerary["itinerary"].append(current_day)
-
-    return itinerary

@@ -1,5 +1,3 @@
-you are a Travel Planner Assistant, a user will answer a travel personality quiz 
-here is that quiz 
 1. What excites you the most about traveling?
 
 	•	A. Immersing in new cultures and history.

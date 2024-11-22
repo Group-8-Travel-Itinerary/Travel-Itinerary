@@ -2,11 +2,12 @@
 # Imports the necessary modules and libraries
 from pathlib import Path
 from flask import Flask, render_template, request, url_for, flash, redirect, session
-from datetime import datetime, timedelta
+import time
+from datetime import datetime
 
 import requests
 import yaml
-from integrations import concat_preferences_for_activities, form_itinerary_prompt, get_activities, get_activity_details, get_itinerary, get_photo_url, load_gpt_instructions, send_quiz_to_gpt, pexels_images, get_custom_quiz, flights_api, text_search_activities, weather_api, get_user_location
+from integrations import concat_preferences_for_activities, form_itinerary_prompt, get_activities, get_activity_details, get_itinerary, get_photo_url, get_single_image, load_gpt_instructions, parse_response, send_quiz_to_gpt, pexels_images, get_custom_quiz, flights_api, text_search_activities, weather_api, get_user_location
 import os
 from flask_session import Session as FlaskSession
 import logging
@@ -30,6 +31,8 @@ FlaskSession(app)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    #added as when closing and reloading the application the session from custom uiz from previous is still there preventing it from going to hardcoded quiz when doing /quiz but now i realised why you added the button to get to hard coded quiz where you added session clear. 
+    session.clear() 
     if request.method == 'POST':
         # Get the destination input from the form
         initial_prompt = request.form.get('destinationInput')
@@ -84,7 +87,15 @@ def quiz():
         session['formatted_answers'] = formatted_answers
         
         # Call the method to send quiz answers to GPT
+            # Measure API call duration
+        start_time = time.time()  # Start timer
         gpt_response = send_quiz_to_gpt(formatted_answers)
+        end_time = time.time()  # End timer
+
+        # Calculate elapsed time
+        elapsed_time = end_time - start_time
+        print(f"GPT API call duration: {elapsed_time:.2f} seconds")
+
 
         # Check for 'error' key in gpt_response and handle accordingly
         if 'error' in gpt_response:
@@ -92,20 +103,38 @@ def quiz():
             error_message = gpt_response.get('message', 'Unknown error from GPT API')
             return redirect(url_for('index'))
 
+        gpt_response = parse_response(gpt_response)
+        
         # Extract summary and destinations from the response
         summary = gpt_response.get('summary', 'No summary available')
         destinations = gpt_response.get('destinations', [])
         session['destinations'] = destinations
         session['summary'] = summary
+        
+        start_time = time.time()  # Start timer
+        destination_images = {destination['name']: get_single_image(destination['name']) for destination in destinations}
+        end_time = time.time()  # End timer
+
+        # Calculate elapsed time
+        elapsed_time = end_time - start_time
+        print(f"images API call duration: {elapsed_time:.2f} seconds")
+
+       # Create a dictionary for destination images
+       
 
         # Render the response in a new template
-        return render_template('quiz_response.html', summary=summary, destinations=destinations)
+        return render_template(
+            'quiz_response.html',
+            summary=summary,
+            destinations=destinations,
+            destination_images=destination_images
+        )
 
     # Handle GET request by loading the quiz from session if available
     custom_quiz = session.get('custom_quiz')
     
     if custom_quiz:
-        print("Custom Quiz from session:", session.get('custom_quiz'))
+        #print("Custom Quiz from session:", session.get('custom_quiz'))
 
         # If there is a custom quiz in the session, render it
         return render_template('quiz.html', quiz=custom_quiz)

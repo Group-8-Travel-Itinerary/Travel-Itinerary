@@ -63,97 +63,100 @@ def get_freebase_id(city_name):
 
     return None
 
-# Function for sending quiz answers to GPT API
 def send_quiz_to_gpt(message, OptionalCustomQuiz=None):
     # Get GPT quiz instructions
-    if OptionalCustomQuiz is None:
-        quiz_instructions = load_gpt_instructions('gpt_instructions/quiz_instructions.txt')
-    else:
-        quiz_instructions = OptionalCustomQuiz
+    quiz_instructions = (
+        load_gpt_instructions('gpt_instructions/quiz_instructions.txt')
+        if OptionalCustomQuiz is None
+        else OptionalCustomQuiz
+    )
 
-    # Create the request body
+    # Construct the prompt
+    prompt = (
+    f"Quiz: {quiz_instructions}\n"
+    f"User answers: {message}\n\n"
+    "Summarize the user's travel personality and suggest three destinations in this format:\n"
+    "Summary: <Summary of user's travel personality>\n"
+    "Destination 1:\n"
+    "Name: <Name>\n"
+    "Description: <Brief description>\n"
+    "Activities: <Activity 1>|<Activity 2>|<Activity 3>|<Activity 4>|<Activity 5>|<Activity 6>\n"
+    "Accommodation: <Option 1>|<Option 2>|<Option 3>\n"
+    "Tips: <Tip 1>|<Tip 2>\n"
+    "Destination 2:\n"
+    "Name: <Name>\n"
+    "Description: <Brief description>\n"
+    "Activities: <Activity 1>|<Activity 2>|<Activity 3>|<Activity 4>|<Activity 5>|<Activity 6>\n"
+    "Accommodation: <Option 1>|<Option 2>|<Option 3>\n"
+    "Tips: <Tip 1>|<Tip 2>\n"
+    "Destination 3:\n"
+    "Name: <Name>\n"
+    "Description: <Brief description>\n"
+    "Activities: <Activity 1>|<Activity 2>|<Activity 3>|<Activity 4>|<Activity 5>|<Activity 6>\n"
+    "Accommodation: <Option 1>|<Option 2>|<Option 3>\n"
+    "Tips: <Tip 1>|<Tip 2>\n"
+    )
+
+
+    # Prepare API request
     request_body = {
-        "model": "gpt-4o",  # Ensure this is the correct model name
-        "messages": [
-            {"role": "system", "content": f"Here is the travel personality quiz that was given to the user: {quiz_instructions}"},
-            {"role": "user", "content": f"Based on the following user responses to the travel personality quiz: {message}\n"
-                                         "Please provide a summary of the user's travel personality and suggest three travel destinations in the following JSON format:\n"
-                                         "{\n"
-                                         '  "summary": "User\'s travel personality summary",\n'
-                                         '  "destinations": [\n'
-                                         '    {\n'
-                                         '      "name": "Destination Name",\n'
-                                         '      "description": "A brief description of the destination.",\n'
-                                         '      "budgetRating": "Budget rating (e.g., $$ - Moderate, $$$ - Expensive, etc.)",\n'
-                                         '      "weather": {\n'
-                                         '        "season": "Season (e.g., Summer, Winter)",\n'
-                                         '        "description": "Weather description for the selected season (e.g., warm, sunny)",\n'
-                                         '        "averageTemperature": {\n'
-                                         '          "min": "Minimum average temperature (°C or °F)",\n'
-                                         '          "max": "Maximum average temperature (°C or °F)"\n'
-                                         '        }\n'
-                                         '      },\n'
-                                         '      "activities": [\n'
-                                         '        "Activity 1",\n'
-                                         '        "Activity 2",\n'
-                                         '        "Activity 3",\n'
-                                         '        "Activity 4",\n'
-                                         '        "Activity 5",\n'
-                                         '        "Activity 6"\n'
-                                         '      ],\n'
-                                         '      "accommodation": [\n'
-                                         '        "Place 1",\n'
-                                         '        "Place 2",\n'
-                                         '        "Place 3"\n'
-                                         '      ],\n'
-                                         '      "travelTips": [\n'
-                                         '        "Tip 1",\n'
-                                         '        "Tip 2"\n'
-                                         '      ]\n'
-                                         '    }\n'
-                                         '  ]\n'
-                                         '}'
-            }
-        ],
-        "max_tokens": 10000
+        "model": "gpt-3.5-turbo-instruct",
+        "prompt": prompt,
+        "max_tokens": 1000,
+        "temperature": 0.7,
     }
 
-    # Serialize the request body to JSON
-    json_data = json.dumps(request_body)
-
-    # Set the API URL
-    url = "https://api.openai.com/v1/chat/completions"
-
-    # Define your headers, including your API key
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {openai.api_key}"  # Ensure this is set in your environment or code
+        "Authorization": f"Bearer {openai.api_key}",
     }
 
-    # Make the API call to the chat completions endpoint
-    response = requests.post(url, headers=headers, data=json_data)
+    url = "https://api.openai.com/v1/completions"
 
-    # Check if the response is successful
+    # Make API request
+    response = requests.post(url, headers=headers, json=request_body)
+
     if response.status_code != 200:
-        error_content = response.text
-        return {"error": f"Error: {response.status_code}", "message": error_content}
-    else:
-        # Return the successful response data
-        response_data = response.json()
+        print(f"API Error: {response.text}")
+        return {"error": f"Error: {response.status_code}", "message": response.text}
 
-        # Parse the content from the first choice to get the actual JSON
-        content = response_data["choices"][0]["message"]["content"]
+    # Return the raw text response
+    response_data = response.json()
+    return response_data["choices"][0]["text"].strip()
 
-        # Remove the markdown code block markers (```json and ```) and parse the JSON
-        if content.startswith("```json"):
-            content = content[8:-3].strip()  # Remove the code block markers
 
-        try:
-            parsed_data = json.loads(content)
-            print("Parsed API Response:", json.dumps(parsed_data, indent=2))
-            return parsed_data  # Return the parsed data
-        except json.JSONDecodeError as e:
-            return {"error": "Failed to decode JSON", "details": str(e)}
+def parse_response(content):
+    try:
+        lines = content.split('\n')
+        result = {"summary": "", "destinations": []}
+        current_destination = None
+
+        for line in lines:
+            if line.startswith("Summary:"):
+                result["summary"] = line.replace("Summary:", "").strip()
+            elif line.startswith("Destination"):
+                if current_destination:  # Save the last destination
+                    result["destinations"].append(current_destination)
+                current_destination = {}
+            elif line.startswith("Name:"):
+                current_destination["name"] = line.replace("Name:", "").strip()
+            elif line.startswith("Description:"):
+                current_destination["description"] = line.replace("Description:", "").strip()
+            elif line.startswith("Activities:"):
+                current_destination["activities"] = line.replace("Activities:", "").strip().split('|')
+            elif line.startswith("Accommodation:"):
+                current_destination["accommodation"] = line.replace("Accommodation:", "").strip().split('|')
+            elif line.startswith("Travel Tips:"):
+                current_destination["travel_tips"] = line.replace("Travel Tips:", "").strip().split('|')
+
+        if current_destination:  # Append the last destination
+            result["destinations"].append(current_destination)
+
+        return result
+    except Exception as e:
+        return {"error": f"Parsing failed: {str(e)}", "details": content}
+
+
 
 def get_custom_quiz(prompt):
     model = "gpt-4o"  # Ensure the correct model name is used
@@ -359,6 +362,37 @@ def pexels_images(query, per_page=10):
         image_urls = [photo["src"]["original"] for photo in photos]
         
         return image_urls
+
+def get_single_image(query):
+    """
+    Fetch a single landscape image from Pexels API for a given query.
+    """
+    url = "https://api.pexels.com/v1/search"
+    headers = {
+        "Authorization": pexels_api_key
+    }
+    params = {
+        "query": query,
+        "per_page": 1,  # Request one image per page
+        "page": 1,      # Ensure only the first page is fetched
+        "orientation": "landscape",  # Restrict to landscape images
+    }
+    
+    response = requests.get(url, headers=headers, params=params)
+    
+    if response.status_code != 200:
+        error_content = response.text
+        return {"error": f"Error: {response.status_code}", "message": error_content}
+    else:
+        response_data = response.json()
+        photos = response_data.get("photos", [])
+        
+        # Return the first image URL if available
+        if photos:
+            return photos[0]["src"]["medium"]
+        else:
+            return None  # No images found for the query
+
     
 def get_user_location():
     # Make a request to get the user's IP address

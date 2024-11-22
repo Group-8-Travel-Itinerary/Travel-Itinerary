@@ -70,12 +70,15 @@ def send_quiz_to_gpt(message, OptionalCustomQuiz=None):
         if OptionalCustomQuiz is None
         else OptionalCustomQuiz
     )
+    
+    initial_prompt = custom_quiz = session.get('initial_prompt')
 
     # Construct the prompt
     prompt = (
     f"Quiz: {quiz_instructions}\n"
     f"User answers: {message}\n\n"
-    "Summarize the user's travel personality and suggest three destinations in this format:\n"
+    f"users initial prompt: {initial_prompt}\n\n"
+    "Summarize the user's travel personality and suggest three destinations in this format based on the above information:\n"
     "Summary: <Summary of user's travel personality>\n"
     "Destination 1:\n"
     "Name: <Name>\n"
@@ -158,56 +161,81 @@ def parse_response(content):
 
 
 
+import requests
+import json
+
 def get_custom_quiz(prompt):
-    model = "gpt-4o"  # Ensure the correct model name is used
+    model = "gpt-3.5-turbo-instruct"  # Use the instruct model for efficiency
 
-    messages = [
-    {"role": "system", "content": "You are an expert travel assistant."},
-    {
-        "role": "user",
-        "content": f"""Create a personalized 10-question travel personality quiz for a user interested in: {prompt}. **Do not use any markdown formatting or backticks**. 
-            Format the response strictly as valid JSON with the following structure (no extra characters, no backticks):
-        {{
-            "quiz_title": "Travel Personality Quiz",
-            "questions": [
-                {{
-                    "question": "Question 1 text here",
-                    "options": [
-                        {{"option": "A", "text": "Option A text here", "icon": "fas fa-icon-for-a"}} ,
-                        {{"option": "B", "text": "Option B text here", "icon": "fas fa-icon-for-b"}} ,
-                        {{"option": "C", "text": "Option C text here", "icon": "fas fa-icon-for-c"}} ,
-                        {{"option": "D", "text": "Option D text here", "icon": "fas fa-icon-for-d"}}
-                    ],
-                    "keyword": ["keyword"]
-                }},
-                // Continue for all 10 questions, adjusting the number of options as needed and including relevant icons
-            ]
-        }}"""
-    }
-]
-
+    # Construct the prompt
+    instruction = (
+        f"Create a personalized 10-question travel personality quiz for a user interested in: {prompt}. "
+        "Provide the quiz in the following format:\n"
+        "Question 1: Question text here\n"
+        "Options: A) Option A text here | B) Option B text here | C) Option C text here | D) Option D text here\n"
+        "...\n"
+        "Continue this pattern for all 10 questions."
+    )
 
     request_body = {
         "model": model,
-        "messages": messages,
-        "max_tokens": 2000
+        "prompt": instruction,
+        "max_tokens": 1500,  # Adjusted based on expected response length
+        "temperature": 0.7,  # Controls randomness; adjust as needed
+        "top_p": 1.0,        # Controls diversity via nucleus sampling
+        "n": 1,              # Number of completions to generate
+        "stop": None         # Define stop sequences if necessary
     }
 
-    url = "https://api.openai.com/v1/chat/completions"
+    url = "https://api.openai.com/v1/completions"
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {openai.api_key}"  # Ensure your API key is configured
     }
 
+   
     response = requests.post(url, headers=headers, json=request_body)
 
     if response.status_code == 200:
         response_data = response.json()
-        quiz_content = response_data["choices"][0]["message"]["content"]
-        return quiz_content
+        quiz_content = response_data["choices"][0]["text"].strip()
+        return parse_quiz_to_json(quiz_content)
     else:
-        flash(f"Error fetching quiz: {response.text}", "error")
+        error_message = f"Error fetching quiz: {response.text}"
+        print(error_message)  # Replace with appropriate logging
         return None
+
+def parse_quiz_to_json(quiz_content):
+    lines = quiz_content.split('\n')
+    questions = []
+    current_question = {}
+
+    for line in lines:
+        if line.startswith("Question"):
+            if current_question:
+                questions.append(current_question)
+            current_question = {
+                "question": line.split(': ', 1)[1],
+                "options": []
+            }
+        elif line.startswith("Options"):
+            options = line.split(': ', 1)[1].split(' | ')
+            for option in options:
+                option_letter, option_text = option.split(') ', 1)
+                current_question["options"].append({
+                    "option": option_letter.strip(),
+                    "text": option_text.strip(),
+                    
+                })
+
+    if current_question:
+        questions.append(current_question)
+
+    quiz_json = {
+        "questions": questions
+    }
+
+    return json.dumps(quiz_json, indent=2)
     
     
     
@@ -359,7 +387,7 @@ def pexels_images(query, per_page=10):
     else:
         response_data = response.json()
         photos = response_data.get("photos", [])
-        image_urls = [photo["src"]["original"] for photo in photos]
+        image_urls = [photo["src"]["medium"] for photo in photos]
         
         return image_urls
 
@@ -389,7 +417,7 @@ def get_single_image(query):
         
         # Return the first image URL if available
         if photos:
-            return photos[0]["src"]["medium"]
+            return photos[0]["src"]["original"]
         else:
             return None  # No images found for the query
 
@@ -409,38 +437,47 @@ def get_user_location():
     # Store the city in the session
     return city
 
+import requests
+import json
+import logging
+
+import requests
+import json
+import logging
+import requests
+import json
+import logging
+
 def get_activities(destination, preferences):
     # Define the prompt for OpenAI to generate activities
-    prompt = f"""
-    You are a travel assistant. A user is planning a trip to {destination} and has specific preferences based on a travel quiz.
-    Here are the preferences: {preferences}.
-    
-    Recommend a list of activities that align with these preferences. Format the response in JSON with the following structure:
-    {{
-        "destination": "{destination}",
-        "activities": [
-            {{
-                "name": "Activity name here",
-                "type": "Type (e.g., adventure, relaxation, cultural)",
-                "description": "an excellent description of the activity"
-            }}
-        ]
-    }}
-    Only include activities that directly match the user's preferences but make sure there are significantly more activities suggested than found in the preferences.
-    """
+    prompt = (
+        f"You are a travel assistant. A user is planning a trip to {destination} with preferences: {preferences}.\n"
+        "Recommend at least five activities that align with these preferences. Provide the response in the following JSON format:\n"
+        "{\n"
+        '  "destination": "Destination Name",\n'
+        '  "activities": [\n'
+        '    {\n'
+        '      "name": "Activity Name",\n'
+        '      "type": "Type of Activity (e.g., adventure, relaxation, cultural)",\n'
+        '      "description": "Brief description of the activity."\n'
+        '    },\n'
+        '    // Include at least five activities\n'
+        '  ]\n'
+        "}"
+    )
 
     # Create the request body
     request_body = {
-        "model": "gpt-4o",  # Ensure this is the correct model name
+        "model": "gpt-3.5-turbo",
         "messages": [
             {"role": "system", "content": "You are a knowledgeable travel assistant."},
             {"role": "user", "content": prompt}
         ],
-        "max_tokens": 1000
+        "max_tokens": 500,  # Adjust based on expected response length
+        "temperature": 0.5,  # Lower temperature for more deterministic output
+        "top_p": 0.9,        # Adjust as needed
+        "n": 1               # Number of completions to generate
     }
-
-    # Serialize the request body to JSON
-    json_data = json.dumps(request_body)
 
     # Set the API URL
     url = "https://api.openai.com/v1/chat/completions"
@@ -452,7 +489,7 @@ def get_activities(destination, preferences):
     }
 
     # Make the API call to the chat completions endpoint
-    response = requests.post(url, headers=headers, data=json_data)
+    response = requests.post(url, headers=headers, json=request_body)
 
     # Check if the response is successful
     if response.status_code != 200:
@@ -465,17 +502,18 @@ def get_activities(destination, preferences):
         content = response_data["choices"][0]["message"]["content"]
         print("Raw content received:", content)
 
-        # Clean up the content if needed and parse it as JSON
-        if content.startswith("```json"):
-            content = content[8:-3].strip()  # Remove the code block markers
-
+        # Attempt to parse the content as JSON
         try:
+            # Remove code block markers if present
+            if content.startswith("```json"):
+                content = content[8:-3].strip()
             activities_data = json.loads(content)
             logging.info(f"Activities: {json.dumps(activities_data, indent=2)}")
             return activities_data
-        except json.JSONDecodeError as e:
+        except json.JSONDecodeError:
             logging.error("Failed to decode JSON response.")
-            return {"error": "Failed to decode JSON", "details": str(e)}
+            return {"error": "Failed to decode JSON"}
+
 
 def concat_preferences_for_activities():
     # Retrieve stored data from session
@@ -576,28 +614,28 @@ def form_itinerary_prompt(destination, formatted_answers, quiz_instructions, iti
 
 
 def get_itinerary(prompt):
-    model = "gpt-4o"  # Ensure the correct model name is used
+    model = "gpt-3.5-turbo"
 
     messages = [
         {"role": "system", "content": "You are an expert travel assistant."},
         {
             "role": "user",
-            "content": f"""Based on the following prompt, create a detailed travel itinerary that includes a day-by-day schedule, with selected activities, and suggested accommodations for the destination:
+            "content": f"""Based on the following prompt, create a travel itinerary with a day-by-day schedule, including activities and accommodations:
             
             {prompt}
             
-            Format the response in JSON with the following structure:
+            Format the response strictly in JSON with the following structure:
             {{
                 "itinerary": [
                     {{
                         "day": "Day 1",
                         "activities": [
-                            {{"time": "9:00 AM", "activity": "Visit a local attraction"}}, 
+                            {{"time": "9:00 AM", "activity": "Visit a local attraction"}},
                             {{"time": "12:00 PM", "activity": "Lunch at a recommended restaurant"}}
                         ],
                         "accommodation": "Suggested accommodation for the night"
                     }},
-                    // Continue for each day of the trip, adding activities and accommodations as needed
+                    // Continue for each day
                 ]
             }}
             """
@@ -607,26 +645,50 @@ def get_itinerary(prompt):
     request_body = {
         "model": model,
         "messages": messages,
-        "max_tokens": 2000
+        "max_tokens": 1000,
+        "temperature": 0.5
     }
 
     url = "https://api.openai.com/v1/chat/completions"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {openai.api_key}"  # Ensure your API key is configured
+        "Authorization": f"Bearer {openai.api_key}"
     }
 
     response = requests.post(url, headers=headers, json=request_body)
-    
-    
 
     if response.status_code == 200:
         response_data = response.json()
-        itinerary_content = response_data["choices"][0]["message"]["content"]
-        if itinerary_content.startswith("```json"):
-            itinerary_content = itinerary_content[8:-3].strip()  # Remove the code block markers
-        return itinerary_content
+        content = response_data["choices"][0]["message"]["content"]
+
+        # If the content is not JSON, parse it into the desired structure
+        if not content.startswith("{"):
+            parsed_itinerary = parse_text_to_json(content)  # Helper function
+            return parsed_itinerary
+
+        return json.loads(content)
     else:
         flash(f"Error fetching itinerary: {response.text}", "error")
         return None
+
+
     
+def parse_text_to_json(text):
+    itinerary = {"itinerary": []}
+    current_day = None
+
+    for line in text.split("\n"):
+        if line.startswith("Day"):
+            if current_day:
+                itinerary["itinerary"].append(current_day)
+            current_day = {"day": line.strip(), "activities": [], "accommodation": ""}
+        elif line.startswith("-"):
+            time, activity = line[1:].split(":", 1)
+            current_day["activities"].append({"time": time.strip(), "activity": activity.strip()})
+        elif line.startswith("Accommodation:"):
+            current_day["accommodation"] = line.split(":", 1)[1].strip()
+
+    if current_day:
+        itinerary["itinerary"].append(current_day)
+
+    return itinerary

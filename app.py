@@ -39,13 +39,20 @@ def index():
 
         if initial_prompt:
             # Call get_custom_quiz with error handling
-            custom_quiz = get_custom_quiz(initial_prompt)
-            if custom_quiz:
+             start_time = time.time()  # Start timer
+             custom_quiz = get_custom_quiz(initial_prompt)
+             end_time = time.time()  # End timer
+
+             # Calculate elapsed time
+             elapsed_time = end_time - start_time
+             print(f"custom quiz API call duration: {elapsed_time:.2f} seconds")
+
+            
+             if custom_quiz:
                 session['custom_quiz'] = custom_quiz
                 session['initial_prompt'] = initial_prompt
-                print(custom_quiz)  # This should now print the quiz data
                 return redirect(url_for('quiz'))  # Redirect to the quiz page
-            else:
+             else:
                 flash('Error retrieving quiz. Please try again.', 'error')
                 return redirect(url_for('index'))
         else:
@@ -160,9 +167,16 @@ def activities():
 
         # Retrieve the prompt based on session data
         prompt = concat_preferences_for_activities()
-
-        # Get basic activity information (name, type, description) from get_activities
+        
+        start_time = time.time()  # Start timer
         activities_data = get_activities(selected_destination, prompt)
+        end_time = time.time()  # End timer
+
+        # Calculate elapsed time
+        elapsed_time = end_time - start_time
+        print(f"activities API call duration: {elapsed_time:.2f} seconds")
+        # Get basic activity information (name, type, description) from get_activities
+        
         session['activities'] = activities_data  # Store this in session for later access
 
         # Initialize detailed_activities_map as an empty dictionary

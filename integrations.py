@@ -5,10 +5,7 @@ import requests
 import json
 import openai
 import yaml
-from datetime import datetime, timedelta
-from flask import session, flash, request
-
-
+from flask import session, flash
 
 # Load the API keys from the config file
 credentials = yaml.load(open('config.yaml'), Loader=yaml.FullLoader)
@@ -17,51 +14,6 @@ openai.api_key = credentials['openai']['api_key']
 weather_api_key = credentials['weather']['api_key']
 flight_api_key = credentials['flight']['api_key']
 ip_api_key = credentials['geoip']['api_key']
-
-def get_freebase_id(city_name):
-    # Define the Wikidata API endpoint
-    wikidata_url = 'https://www.wikidata.org/w/api.php'
-
-    # Define the parameters for the API request
-    params = {
-        'action': 'wbsearchentities',
-        'search': city_name,
-        'language': 'en',
-        'format': 'json'
-    }
-
-    # Make the API request
-    response = requests.get(wikidata_url, params=params)
-    data = response.json()
-
-    # Check if the city was found
-    if not data['search']:
-        return None
-
-    # Iterate through the search results to find a valid Freebase ID
-    for result in data['search']:
-        entity_id = result['id']
-
-        # Define the parameters to get the entity data
-        params = {
-            'action': 'wbgetentities',
-            'ids': entity_id,
-            'props': 'claims',
-            'format': 'json'
-        }
-
-        # Make the API request to get the entity data
-        response = requests.get(wikidata_url, params=params)
-        data = response.json()
-
-        # Extract the Freebase ID (P646) from the entity data
-        claims = data['entities'][entity_id]['claims']
-        if 'P646' in claims:
-            freebase_id = claims['P646'][0]['mainsnak']['datavalue']['value']
-            if freebase_id:
-                return freebase_id
-
-    return None
 
 def send_quiz_to_gpt(message, OptionalCustomQuiz=None):
     # Get GPT quiz instructions
@@ -159,11 +111,6 @@ def parse_response(content):
     except Exception as e:
         return {"error": f"Parsing failed: {str(e)}", "details": content}
 
-
-
-import requests
-import json
-
 def get_custom_quiz(prompt):
     model = "gpt-3.5-turbo-instruct"  # Use the instruct model for efficiency
 
@@ -243,6 +190,191 @@ def parse_quiz_to_json(quiz_content):
 def load_gpt_instructions(file_path):
  with open(file_path, 'r') as file:
     return file.read()
+
+def get_activities(destination, preferences):
+    # Define the prompt for OpenAI to generate activities
+    prompt = (
+        f"You are a travel assistant. A user is planning a trip to {destination} with preferences: {preferences}.\n"
+        "Recommend at least five activities that align with these preferences. Provide the response in the following JSON format:\n"
+        "{\n"
+        '  "destination": "Destination Name",\n'
+        '  "activities": [\n'
+        '    {\n'
+        '      "name": "Activity Name",\n'
+        '      "type": "Type of Activity (e.g., adventure, relaxation, cultural)",\n'
+        '      "description": "Brief description of the activity."\n'
+        '    },\n'
+        '    // Include at least five activities\n'
+        '  ]\n'
+        "}"
+    )
+
+    # Create the request body
+    request_body = {
+        "model": "gpt-3.5-turbo",
+        "messages": [
+            {"role": "system", "content": "You are a knowledgeable travel assistant."},
+            {"role": "user", "content": prompt}
+        ],
+        "max_tokens": 500,  # Adjust based on expected response length
+        "temperature": 0.5,  # Lower temperature for more deterministic output
+        "top_p": 0.9,        # Adjust as needed
+        "n": 1               # Number of completions to generate
+    }
+
+    # Set the API URL
+    url = "https://api.openai.com/v1/chat/completions"
+
+    # Define headers, including the API key
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {openai.api_key}"  # Ensure the API key is set in your environment or code
+    }
+
+    # Make the API call to the chat completions endpoint
+    response = requests.post(url, headers=headers, json=request_body)
+
+    # Check if the response is successful
+    if response.status_code != 200:
+        error_content = response.text
+        logging.error(f"OpenAI API error: {error_content}")
+        return {"error": f"Error: {response.status_code}", "message": error_content}
+    else:
+        # Process and parse the successful response
+        response_data = response.json()
+        content = response_data["choices"][0]["message"]["content"]
+        print("Raw content received:", content)
+
+        # Attempt to parse the content as JSON
+        try:
+            # Remove code block markers if present
+            if content.startswith("```json"):
+                content = content[8:-3].strip()
+            activities_data = json.loads(content)
+            logging.info(f"Activities: {json.dumps(activities_data, indent=2)}")
+            return activities_data
+        except json.JSONDecodeError:
+            logging.error("Failed to decode JSON response.")
+            return {"error": "Failed to decode JSON"}
+
+
+def concat_preferences_for_activities():
+    # Retrieve stored data from session
+    if(session.get('initial_prompt', '')):
+      initial_prompt = session.get('initial_prompt', '')
+    
+    # Check if 'custom_quiz' is available in the session; if not, load instructions
+    if session.get('custom_quiz'):
+        quiz = session.get('custom_quiz', '')
+    else:
+        quiz = load_gpt_instructions('gpt_instructions/quiz_instructions.txt')
+    
+    formatted_answers = session.get('formatted_answers', '')
+    summary = session.get('summary', '')
+    destinations = session.get('destinations', [])
+
+    destination = session.get('destination', '')
+
+    # Formulate the prompt with session data
+    activities_prompt = (
+        f"The user selected {destination} as their destination. "
+        f"Here is the quiz they were given: {quiz}. "
+        f"Their answers to the quiz: {formatted_answers}. "
+        f"Summary of preferences: {summary}. "
+        f"Here were the output suggestions for the destination. Use the provided destination to find activities that match {destinations}. "
+        f"Based on this, suggest activities that align with these preferences. "
+        f"Please format the activities in JSON format, with each activity containing a 'name', 'type', and 'description'."
+    )
+
+    # Return the prompt for use with OpenAI
+    return activities_prompt
+
+
+def form_itinerary_prompt(destination, formatted_answers, quiz_instructions, itinerary_activities):
+    # Basic prompt structure
+    prompt = f"You are planning a travel itinerary for the destination: {destination}.\n\n"
+
+    # Add quiz instructions if provided
+    if quiz_instructions:
+        prompt += f"Here are some quiz instructions for better customization:\n{quiz_instructions}\n\n"
+
+    # Add answers from the user quiz
+    prompt += "User preferences based on quiz:\n"
+    for answer in formatted_answers:
+        prompt += f"- {answer}\n"
+    
+    # Add details of each selected activity
+    prompt += "\nThe selected activities for the itinerary include:\n"
+    for activity in itinerary_activities:
+        activity_details = (
+            f"Activity Name: {activity.get('name')}\n"
+            f"Type: {activity.get('type')}\n"
+            f"Description: {activity.get('description')}\n"
+        )
+        prompt += f"\n{activity_details}"
+
+    
+
+    return prompt
+
+
+
+def get_itinerary(prompt):
+    model = "gpt-4o"  # Ensure the correct model name is used
+
+    messages = [
+        {"role": "system", "content": "You are an expert travel assistant."},
+        {
+            "role": "user",
+            "content": f"""Based on the following prompt, create a detailed travel itinerary that includes a day-by-day schedule, with selected activities, and suggested accommodations for the destination:
+            
+            {prompt}
+            
+            Format the response in JSON with the following structure:
+            {{
+                "itinerary": [
+                    {{
+                        "day": "Day 1",
+                        "activities": [
+                            {{"time": "9:00 AM", "activity": "Visit a local attraction"}}, 
+                            {{"time": "12:00 PM", "activity": "Lunch at a recommended restaurant"}}
+                        ],
+                        "accommodation": "Suggested accommodation for the night"
+                    }},
+                    // Continue for each day of the trip, adding activities and accommodations as needed
+                ]
+            }}
+            """
+        }
+    ]
+
+    request_body = {
+        "model": model,
+        "messages": messages,
+        "max_tokens": 2000
+    }
+
+    url = "https://api.openai.com/v1/chat/completions"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {openai.api_key}"  # Ensure your API key is configured
+    }
+
+    response = requests.post(url, headers=headers, json=request_body)
+    
+    
+
+    if response.status_code == 200:
+        response_data = response.json()
+        itinerary_content = response_data["choices"][0]["message"]["content"]
+        if itinerary_content.startswith("```json"):
+            itinerary_content = itinerary_content[8:-3].strip()  # Remove the code block markers
+        return itinerary_content
+    else:
+        flash(f"Error fetching itinerary: {response.text}", "error")
+        return None
+    
+# Non GPT API calls    
 
 # Function to get data from a flights API to give an idea of the prices
 def flights_api(request_city, destination_city, start_date, end_date):
@@ -367,7 +499,7 @@ def weather_api(cities):
     
     return weather_data
 
-def pexels_images(query, per_page=10):
+def pexels_images(query, per_page):
     # Function to get landscape images from Pexels API
     url = "https://api.pexels.com/v1/search"
     headers = {
@@ -390,37 +522,6 @@ def pexels_images(query, per_page=10):
         image_urls = [photo["src"]["medium"] for photo in photos]
         
         return image_urls
-
-def get_single_image(query):
-    """
-    Fetch a single landscape image from Pexels API for a given query.
-    """
-    url = "https://api.pexels.com/v1/search"
-    headers = {
-        "Authorization": pexels_api_key
-    }
-    params = {
-        "query": query,
-        "per_page": 1,  # Request one image per page
-        "page": 1,      # Ensure only the first page is fetched
-        "orientation": "landscape",  # Restrict to landscape images
-    }
-    
-    response = requests.get(url, headers=headers, params=params)
-    
-    if response.status_code != 200:
-        error_content = response.text
-        return {"error": f"Error: {response.status_code}", "message": error_content}
-    else:
-        response_data = response.json()
-        photos = response_data.get("photos", [])
-        
-        # Return the first image URL if available
-        if photos:
-            return photos[0]["src"]["original"]
-        else:
-            return None  # No images found for the query
-
     
 def get_user_location():
     # Make a request to get the user's IP address
@@ -436,117 +537,7 @@ def get_user_location():
     city = json_data.get('city')
     # Store the city in the session
     return city
-
-import requests
-import json
-import logging
-
-import requests
-import json
-import logging
-import requests
-import json
-import logging
-
-def get_activities(destination, preferences):
-    # Define the prompt for OpenAI to generate activities
-    prompt = (
-        f"You are a travel assistant. A user is planning a trip to {destination} with preferences: {preferences}.\n"
-        "Recommend at least five activities that align with these preferences. Provide the response in the following JSON format:\n"
-        "{\n"
-        '  "destination": "Destination Name",\n'
-        '  "activities": [\n'
-        '    {\n'
-        '      "name": "Activity Name",\n'
-        '      "type": "Type of Activity (e.g., adventure, relaxation, cultural)",\n'
-        '      "description": "Brief description of the activity."\n'
-        '    },\n'
-        '    // Include at least five activities\n'
-        '  ]\n'
-        "}"
-    )
-
-    # Create the request body
-    request_body = {
-        "model": "gpt-3.5-turbo",
-        "messages": [
-            {"role": "system", "content": "You are a knowledgeable travel assistant."},
-            {"role": "user", "content": prompt}
-        ],
-        "max_tokens": 500,  # Adjust based on expected response length
-        "temperature": 0.5,  # Lower temperature for more deterministic output
-        "top_p": 0.9,        # Adjust as needed
-        "n": 1               # Number of completions to generate
-    }
-
-    # Set the API URL
-    url = "https://api.openai.com/v1/chat/completions"
-
-    # Define headers, including the API key
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {openai.api_key}"  # Ensure the API key is set in your environment or code
-    }
-
-    # Make the API call to the chat completions endpoint
-    response = requests.post(url, headers=headers, json=request_body)
-
-    # Check if the response is successful
-    if response.status_code != 200:
-        error_content = response.text
-        logging.error(f"OpenAI API error: {error_content}")
-        return {"error": f"Error: {response.status_code}", "message": error_content}
-    else:
-        # Process and parse the successful response
-        response_data = response.json()
-        content = response_data["choices"][0]["message"]["content"]
-        print("Raw content received:", content)
-
-        # Attempt to parse the content as JSON
-        try:
-            # Remove code block markers if present
-            if content.startswith("```json"):
-                content = content[8:-3].strip()
-            activities_data = json.loads(content)
-            logging.info(f"Activities: {json.dumps(activities_data, indent=2)}")
-            return activities_data
-        except json.JSONDecodeError:
-            logging.error("Failed to decode JSON response.")
-            return {"error": "Failed to decode JSON"}
-
-
-def concat_preferences_for_activities():
-    # Retrieve stored data from session
-    if(session.get('initial_prompt', '')):
-      initial_prompt = session.get('initial_prompt', '')
     
-    # Check if 'custom_quiz' is available in the session; if not, load instructions
-    if session.get('custom_quiz'):
-        quiz = session.get('custom_quiz', '')
-    else:
-        quiz = load_gpt_instructions('gpt_instructions/quiz_instructions.txt')
-    
-    formatted_answers = session.get('formatted_answers', '')
-    summary = session.get('summary', '')
-    destinations = session.get('destinations', [])
-
-    destination = session.get('destination', '')
-
-    # Formulate the prompt with session data
-    activities_prompt = (
-        f"The user selected {destination} as their destination. "
-        f"Here is the quiz they were given: {quiz}. "
-        f"Their answers to the quiz: {formatted_answers}. "
-        f"Summary of preferences: {summary}. "
-        f"Here were the output suggestions for the destination. Use the provided destination to find activities that match {destinations}. "
-        f"Based on this, suggest activities that align with these preferences. "
-        f"Please format the activities in JSON format, with each activity containing a 'name', 'type', and 'description'."
-    )
-
-    # Return the prompt for use with OpenAI
-    return activities_prompt
-
-
 #set location and radius from getting chat gpt to output it when getting activities!!! this can reduce costs for api calls to google places 
 def text_search_activities(query, api_key, location=None, radius=None):
     url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
@@ -574,96 +565,51 @@ def get_activity_details(place_id, api_key):
     response = requests.get(url, params=params)
     return response.json()
 
-
-
-
-
 def get_photo_url(photo_reference, api_key, max_width=400):
     return f"https://maps.googleapis.com/maps/api/place/photo?maxwidth={max_width}&photoreference={photo_reference}&key={api_key}"
 
+def get_freebase_id(city_name):
+    # Define the Wikidata API endpoint
+    wikidata_url = 'https://www.wikidata.org/w/api.php'
 
-
-def form_itinerary_prompt(destination, formatted_answers, quiz_instructions, itinerary_activities):
-    # Basic prompt structure
-    prompt = f"You are planning a travel itinerary for the destination: {destination}.\n\n"
-
-    # Add quiz instructions if provided
-    if quiz_instructions:
-        prompt += f"Here are some quiz instructions for better customization:\n{quiz_instructions}\n\n"
-
-    # Add answers from the user quiz
-    prompt += "User preferences based on quiz:\n"
-    for answer in formatted_answers:
-        prompt += f"- {answer}\n"
-    
-    # Add details of each selected activity
-    prompt += "\nThe selected activities for the itinerary include:\n"
-    for activity in itinerary_activities:
-        activity_details = (
-            f"Activity Name: {activity.get('name')}\n"
-            f"Type: {activity.get('type')}\n"
-            f"Description: {activity.get('description')}\n"
-        )
-        prompt += f"\n{activity_details}"
-
-    
-
-    return prompt
-
-
-
-def get_itinerary(prompt):
-    model = "gpt-4o"  # Ensure the correct model name is used
-
-    messages = [
-        {"role": "system", "content": "You are an expert travel assistant."},
-        {
-            "role": "user",
-            "content": f"""Based on the following prompt, create a detailed travel itinerary that includes a day-by-day schedule, with selected activities, and suggested accommodations for the destination:
-            
-            {prompt}
-            
-            Format the response in JSON with the following structure:
-            {{
-                "itinerary": [
-                    {{
-                        "day": "Day 1",
-                        "activities": [
-                            {{"time": "9:00 AM", "activity": "Visit a local attraction"}}, 
-                            {{"time": "12:00 PM", "activity": "Lunch at a recommended restaurant"}}
-                        ],
-                        "accommodation": "Suggested accommodation for the night"
-                    }},
-                    // Continue for each day of the trip, adding activities and accommodations as needed
-                ]
-            }}
-            """
-        }
-    ]
-
-    request_body = {
-        "model": model,
-        "messages": messages,
-        "max_tokens": 2000
+    # Define the parameters for the API request
+    params = {
+        'action': 'wbsearchentities',
+        'search': city_name,
+        'language': 'en',
+        'format': 'json'
     }
 
-    url = "https://api.openai.com/v1/chat/completions"
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {openai.api_key}"  # Ensure your API key is configured
-    }
+    # Make the API request
+    response = requests.get(wikidata_url, params=params)
+    data = response.json()
 
-    response = requests.post(url, headers=headers, json=request_body)
-    
-    
-
-    if response.status_code == 200:
-        response_data = response.json()
-        itinerary_content = response_data["choices"][0]["message"]["content"]
-        if itinerary_content.startswith("```json"):
-            itinerary_content = itinerary_content[8:-3].strip()  # Remove the code block markers
-        return itinerary_content
-    else:
-        flash(f"Error fetching itinerary: {response.text}", "error")
+    # Check if the city was found
+    if not data['search']:
         return None
-    
+
+    # Iterate through the search results to find a valid Freebase ID
+    for result in data['search']:
+        entity_id = result['id']
+
+        # Define the parameters to get the entity data
+        params = {
+            'action': 'wbgetentities',
+            'ids': entity_id,
+            'props': 'claims',
+            'format': 'json'
+        }
+
+        # Make the API request to get the entity data
+        response = requests.get(wikidata_url, params=params)
+        data = response.json()
+
+        # Extract the Freebase ID (P646) from the entity data
+        claims = data['entities'][entity_id]['claims']
+        if 'P646' in claims:
+            freebase_id = claims['P646'][0]['mainsnak']['datavalue']['value']
+            if freebase_id:
+                return freebase_id
+
+    return None
+

@@ -78,7 +78,7 @@ def send_quiz_to_gpt(message, OptionalCustomQuiz=None):
     f"Quiz: {quiz_instructions}\n"
     f"User answers: {message}\n\n"
     f"users initial prompt: {initial_prompt}\n\n"
-    "Summarize the user's travel personality and suggest three destinations in this format based on the above information:\n"
+    "Summarize the user's travel personality and suggest three destinations in this format based on the above information, if the users initial prompt is a destination then the 3 destinations must be an area inside the destination for example if the user says glasgow then it could suggest destinations like glasgow west end, glasgow city center, etc.:\n"
     "Summary: <Summary of user's travel personality>\n"
     "Destination 1:\n"
     "Name: <Name>\n"
@@ -105,7 +105,7 @@ def send_quiz_to_gpt(message, OptionalCustomQuiz=None):
     request_body = {
         "model": "gpt-3.5-turbo-instruct",
         "prompt": prompt,
-        "max_tokens": 1000,
+        "max_tokens": 1500,
         "temperature": 0.7,
     }
 

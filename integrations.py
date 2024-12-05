@@ -63,69 +63,112 @@ def get_freebase_id(city_name):
 
     return None
 
+import json
+import requests
+
+import json
+import requests
+
 def send_quiz_to_gpt(message, OptionalCustomQuiz=None):
-    # Get GPT quiz instructions
-    quiz_instructions = (
-        load_gpt_instructions('gpt_instructions/quiz_instructions.txt')
-        if OptionalCustomQuiz is None
-        else OptionalCustomQuiz
-    )
-    
-    initial_prompt = custom_quiz = session.get('initial_prompt')
-
-    # Construct the prompt
-    prompt = (
-    f"Quiz: {quiz_instructions}\n"
-    f"User answers: {message}\n\n"
-    f"users initial prompt: {initial_prompt}\n\n"
-    "Summarize the user's travel personality and suggest three destinations in this format based on the above information, if the users initial prompt is a destination then the 3 destinations must be an area inside the destination for example if the user says glasgow then it could suggest destinations like glasgow west end, glasgow city center, etc.:\n"
-    "Summary: <Summary of user's travel personality>\n"
-    "Destination 1:\n"
-    "Name: <Name>\n"
-    "Description: <Brief description>\n"
-    "Activities: <Activity 1>|<Activity 2>|<Activity 3>|<Activity 4>|<Activity 5>|<Activity 6>\n"
-    "Accommodation: <Option 1>|<Option 2>|<Option 3>\n"
-    "Tips: <Tip 1>|<Tip 2>\n"
-    "Destination 2:\n"
-    "Name: <Name>\n"
-    "Description: <Brief description>\n"
-    "Activities: <Activity 1>|<Activity 2>|<Activity 3>|<Activity 4>|<Activity 5>|<Activity 6>\n"
-    "Accommodation: <Option 1>|<Option 2>|<Option 3>\n"
-    "Tips: <Tip 1>|<Tip 2>\n"
-    "Destination 3:\n"
-    "Name: <Name>\n"
-    "Description: <Brief description>\n"
-    "Activities: <Activity 1>|<Activity 2>|<Activity 3>|<Activity 4>|<Activity 5>|<Activity 6>\n"
-    "Accommodation: <Option 1>|<Option 2>|<Option 3>\n"
-    "Tips: <Tip 1>|<Tip 2>\n"
-    )
 
 
-    # Prepare API request
+    # Load GPT quiz instructions
+    if OptionalCustomQuiz is None:
+        quiz_instructions = load_gpt_instructions('gpt_instructions/quiz_instructions.txt')
+    else:
+        quiz_instructions = OptionalCustomQuiz
+
+    # Get the initial prompt, handling cases where it might not exist
+    initial_prompt = session.get('initial_prompt', None)
+    if initial_prompt is None:
+        initial_prompt_message = "The user did not provide an initial input."
+    else:
+        initial_prompt_message = f"The user's initial input is: {initial_prompt}."
+
+    # Create the request body
     request_body = {
-        "model": "gpt-3.5-turbo-instruct",
-        "prompt": prompt,
-        "max_tokens": 1500,
-        "temperature": 0.7,
+        "model": "gpt-4",  # Ensure this is the correct model name
+        "messages": [
+            {
+                "role": "system",
+                "content": f"Here is the travel personality quiz that was given to the user: {quiz_instructions}"
+            },
+            {
+                "role": "user",
+                "content": f"Based on the following user responses to the travel personality quiz: {message}\n"
+                           f"{initial_prompt_message}\n"
+                           "Summarize the user's travel personality and suggest three travel destinations in this format. "
+                           "If the user's initial input is a city or a destination (e.g., Edinburgh), provide three specific areas or neighborhoods within that destination. "
+                           "For example, if the user inputs 'Edinburgh,' suggest destinations like 'Edinburgh Old Town,' 'Edinburgh New Town,' and 'Edinburgh Leith.  ... please ensure the city is included in the destination name'\n\n"
+                           "Use this JSON format:\n"
+                           "{\n"
+                           '  "summary": "User\'s travel personality summary",\n'
+                           '  "destinations": [\n'
+                           '    {\n'
+                           '      "name": "Destination Name",\n'
+                           '      "airport": "Airport Name closest to the destination",\n'
+                           '      "description": "A brief description of the destination.",\n'
+                           '      "activities": [\n'
+                           '        "Activity 1",\n'
+                           '        "Activity 2",\n'
+                           '        "Activity 3"\n'
+                           '      ],\n'
+                           '      "accommodation": [\n'
+                           '        "Place 1",\n'
+                           '        "Place 2",\n'
+                           '        "Place 3"\n'
+                           '      ],\n'
+                           '      "travelTips": [\n'
+                           '        "Tip 1",\n'
+                           '        "Tip 2"\n'
+                           '      ]\n'
+                           '    }\n'
+                           '  ]\n'
+                           '}'
+            }
+        ],
+        "max_tokens": 5000  # Adjust based on your API limits
     }
 
+    # Serialize the request body to JSON
+    json_data = json.dumps(request_body)
+
+    # Set the API URL
+    url = "https://api.openai.com/v1/chat/completions"
+
+    # Define your headers, including your API key
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {openai.api_key}",
+        "Authorization": f"Bearer {openai.api_key}"  # Ensure this is set in your environment or code
     }
 
-    url = "https://api.openai.com/v1/completions"
+    # Make the API call to the chat completions endpoint
+    response = requests.post(url, headers=headers, data=json_data)
 
-    # Make API request
-    response = requests.post(url, headers=headers, json=request_body)
-
+    # Check if the response is successful
     if response.status_code != 200:
-        print(f"API Error: {response.text}")
-        return {"error": f"Error: {response.status_code}", "message": response.text}
+        error_content = response.text
+        return {"error": f"Error: {response.status_code}", "message": error_content}
 
-    # Return the raw text response
-    response_data = response.json()
-    return response_data["choices"][0]["text"].strip()
+    # Parse the response data
+    try:
+        response_data = response.json()
+        content = response_data["choices"][0]["message"]["content"]
+
+        # Remove the markdown code block markers (if present)
+        if content.startswith("```json"):
+            content = content[8:-3].strip()
+
+        # Parse the content into JSON
+        parsed_data = json.loads(content)
+        print("Parsed API Response:", json.dumps(parsed_data, indent=2))
+        return parsed_data
+
+    except (KeyError, json.JSONDecodeError) as e:
+        return {"error": "Failed to decode response content", "details": str(e)}
+
+
+
 
 
 def parse_response(content):
@@ -165,11 +208,12 @@ import requests
 import json
 
 def get_custom_quiz(prompt):
-    model = "gpt-3.5-turbo-instruct"  # Use the instruct model for efficiency
+ 
+    model = "gpt-4"  # Use GPT-4 for enhanced capabilities
 
     # Construct the prompt
     instruction = (
-        f"Create a personalized 10-question travel personality quiz for a user interested in: {prompt}. "
+        f"Create a personalized 10-question travel personality quiz with questions relevent to a user intrested in: {prompt}. "
         "Provide the quiz in the following format:\n"
         "Question 1: Question text here\n"
         "Options: A) Option A text here | B) Option B text here | C) Option C text here | D) Option D text here\n"
@@ -177,33 +221,42 @@ def get_custom_quiz(prompt):
         "Continue this pattern for all 10 questions."
     )
 
+    # Prepare the request body
     request_body = {
         "model": model,
-        "prompt": instruction,
-        "max_tokens": 1500,  # Adjusted based on expected response length
-        "temperature": 0.7,  # Controls randomness; adjust as needed
+        "messages": [
+            {"role": "system", "content": "You are a quiz generator specializing in creating travel personality quizzes."},
+            {"role": "user", "content": instruction}
+        ],
+        "max_tokens": 1500,  # Adjust for expected response length
+        "temperature": 0.7,  # Controls randomness; adjust for more/less creative output
         "top_p": 1.0,        # Controls diversity via nucleus sampling
-        "n": 1,              # Number of completions to generate
-        "stop": None         # Define stop sequences if necessary
+        "n": 1               # Number of completions to generate
     }
 
-    url = "https://api.openai.com/v1/completions"
+    # Define the API endpoint and headers
+    url = "https://api.openai.com/v1/chat/completions"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {openai.api_key}"  # Ensure your API key is configured
+        "Authorization": f"Bearer {openai.api_key}"  # Ensure your API key is configured correctly
     }
 
-   
+    # Make the API request
     response = requests.post(url, headers=headers, json=request_body)
 
     if response.status_code == 200:
-        response_data = response.json()
-        quiz_content = response_data["choices"][0]["text"].strip()
-        return parse_quiz_to_json(quiz_content)
+        try:
+            response_data = response.json()
+            quiz_content = response_data["choices"][0]["message"]["content"].strip()
+            return parse_quiz_to_json(quiz_content)
+        except (KeyError, json.JSONDecodeError) as e:
+            print(f"Error parsing response: {str(e)}")  # Replace with appropriate logging
+            return None
     else:
         error_message = f"Error fetching quiz: {response.text}"
         print(error_message)  # Replace with appropriate logging
         return None
+
 
 def parse_quiz_to_json(quiz_content):
     lines = quiz_content.split('\n')

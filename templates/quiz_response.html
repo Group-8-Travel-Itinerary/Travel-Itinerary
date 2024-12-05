@@ -38,8 +38,11 @@
                                 {% endfor %}
                             </ul>
 
-                            <input type="radio" id="destination{{ loop.index }}" name="selected_destination" value="{{ destination.name }}" required>
+                            <input type="radio" id="destination{{ loop.index }}" name="selected_destination" 
+                                value="{{ destination.name }}|{{ destination.airport }}" required>
                             <label for="destination{{ loop.index }}" class="custom-btn">Select {{ destination.name }}</label>
+
+
                         </div>
                     </div>
                 </div>

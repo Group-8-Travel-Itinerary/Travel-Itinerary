@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 import requests
 import yaml
-from integrations import concat_preferences_for_activities, form_itinerary_prompt, get_activities, get_activity_details, get_itinerary, get_photo_url, get_single_image, load_gpt_instructions, parse_response, send_quiz_to_gpt, pexels_images, get_custom_quiz, flights_api, text_search_activities, weather_api, get_user_location
+from integrations import concat_preferences_for_activities, form_itinerary_prompt, get_activities, get_activity_details, get_itinerary, get_photo_url, load_gpt_instructions, parse_response, send_quiz_to_gpt, pexels_images, get_custom_quiz, flights_api, text_search_activities, weather_api, get_user_location
 import os
 from flask_session import Session as FlaskSession
 import logging
@@ -120,7 +120,7 @@ def quiz():
         session['summary'] = summary
         
         start_time = time.time()  # Start timer
-        destination_images = {destination['name']: get_single_image(destination['name']) for destination in destinations}
+        destination_images = {destination['name']: pexels_images(destination['name'], 1) for destination in destinations}
         end_time = time.time()  # End timer
 
         # Calculate elapsed time
@@ -302,7 +302,7 @@ def itinerary():
         # API Calls for Flights, Images and Weather
 
         # Call the Pexels API function to get images
-        images = pexels_images(destination)
+        images = pexels_images(destination, 5)
         
        # Generate the dates for the next week starting from today formatted in YYYY-MM-DD
         start_date = datetime.now().date().strftime('%Y-%m-%d')

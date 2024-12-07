@@ -110,11 +110,12 @@ def quiz():
             error_message = gpt_response.get('message', 'Unknown error from GPT API')
             return redirect(url_for('index'))
 
-        gpt_response = parse_response(gpt_response)
+        #gpt_response = parse_response(gpt_response)
         
         # Extract summary and destinations from the response
         summary = gpt_response.get('summary', 'No summary available')
         destinations = gpt_response.get('destinations', [])
+        
         session['destinations'] = destinations
         session['summary'] = summary
         
@@ -161,10 +162,15 @@ places_api_key = credentials['places']['api_key']
 @app.route('/activities', methods=['GET', 'POST'])
 def activities():
     if request.method == 'POST':
-        # Handle POST request for selecting a destination
-        selected_destination = request.form.get('selected_destination')
-        session['destination'] = selected_destination
-
+        selected_value = request.form.get('selected_destination')
+        
+        # Split the value into destination and airport
+        if selected_value:
+            selected_destination, airport = selected_value.split('|')
+            
+            # Store them in the session
+            session['destination'] = selected_destination
+            session['airport'] = airport
         # Retrieve the prompt based on session data
         prompt = concat_preferences_for_activities()
         
@@ -302,7 +308,7 @@ def itinerary():
         start_date = datetime.now().date().strftime('%Y-%m-%d')
         end_date = (datetime.now().date() + timedelta(days=7)).strftime('%Y-%m-%d')
         # Strip anything after the , in the destination to get the city name for flights
-        flight_destination = destination.split(',')[0]
+        flight_destination = session.get('airport')
         # Call the Flights API function to get flight information
         flights = flights_api(city, flight_destination, start_date, end_date)
         
